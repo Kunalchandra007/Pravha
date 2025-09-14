@@ -67,3 +67,57 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 ## 🔄 System Architecture
 Sensor Data → Data Processing → ML Prediction → Alert Generation → Response Coordination
 
+## 🚀 Getting Started
+
+### Prerequisites
+- Python 3.9+ installed
+- Node.js 16+ and npm installed
+- Git installed
+
+### Setup Instructions
+
+#### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Kunalchandra007/Pravha.git
+cd Pravha
+```
+
+#### Step 2: Setup Backend
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install Python dependencies
+pip install -r ../requirements.txt
+
+# Start the backend server
+uvicorn app_with_alerts:app --host 0.0.0.0 --port 8002
+```
+
+#### Step 3: Setup Frontend (Open New Terminal)
+```bash
+# Navigate to frontend directory
+cd pravha-frontend
+
+# Install Node.js dependencies
+npm install
+
+# Start the frontend development server
+npm start
+```
+
+#### Step 4: Access the Application
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8002
+- **API Documentation**: http://localhost:8002/docs
+
+### What Each Component Does
+- **Backend**: FastAPI server with ML models for flood prediction
+- **Frontend**: React.js web interface for visualization and interaction
+- **Models**: Pre-trained XGBoost and Neural Network models for flood forecasting
+
+### Troubleshooting
+- If backend fails: Check if all Python packages are installed
+- If frontend fails: Run `npm install` again
+- If ports are busy: Change ports in the commands above
+
