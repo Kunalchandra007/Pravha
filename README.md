@@ -13,9 +13,9 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 
 ## 🚀 Key Features
 - **Smart Prediction Engine**
-  - ML-powered flood forecasting using LSTM and Random Forest models
-  - Real-time data analysis from multiple sources
-  - Confidence level indicators for predictions
+  - XGBoost ML model for flood forecasting
+  - Location-based feature generation using GPS coordinates
+  - Confidence level indicators and uncertainty calculations
 
 - **Real-time Monitoring**
   - Integration with weather stations
@@ -42,13 +42,11 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
   - Real-time situation assessment
 
 ## 🛠️ Tech Stack
-- **Frontend**: React.js, Tailwind CSS
-- **Backend**: Python (FastAPI)
-- **ML/AI**: Pytorch, scikit-learn
-- **GIS**: QGIS, GeoPandas
-- **Database**: PostgreSQL with PostGIS
-- **Real-time Processing**: Apache Kafka
-- **Cloud**: AWS
+- **Frontend**: React.js with TypeScript, Tailwind CSS, Leaflet Maps
+- **Backend**: Python (FastAPI), XGBoost ML Model
+- **ML/AI**: XGBoost, scikit-learn, NumPy
+- **Real-time Features**: Email Alert System, Location-based Predictions
+- **Development**: Uvicorn server, CORS enabled
 
 ## 📊 Data Sources
 - Weather station readings
