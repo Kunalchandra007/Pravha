@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from alert_system import alert_system
 from typing import List, Optional
+from auth_routes import router as auth_router
 
 app = FastAPI(title="Pravha API with Alerts", version="2.0.0")
 
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include authentication routes
+app.include_router(auth_router)
 
 # Load XGBoost Model
 print("Loading XGBoost model...")
@@ -735,6 +739,206 @@ def get_evacuation_routes(latitude: float, longitude: float) -> List[dict]:
         })
         
     return routes
+
+# SOS Emergency System Endpoints
+
+@app.post("/sos/request")
+async def create_sos_request(request: dict):
+    """Create a new SOS emergency request"""
+    try:
+        sos_data = {
+            "id": f"sos_{len(alert_system.alert_history) + 1}",
+            "user_id": request.get("user_id", "anonymous"),
+            "location": request.get("location", [0, 0]),
+            "message": request.get("message", ""),
+            "emergency_type": request.get("emergency_type", "FLOOD"),
+            "timestamp": "2025-09-14 01:00:00",
+            "status": "PENDING",
+            "assigned_officer": None,
+            "response_time": None,
+            "resolution_notes": None,
+            "resolved_at": None
+        }
+        
+        # Auto-trigger high-priority alert for SOS requests
+        try:
+            location_str = f"{sos_data['location'][0]:.4f}, {sos_data['location'][1]:.4f}"
+            alert_system.broadcast_alert(
+                risk_level="CRITICAL",
+                probability=0.9,  # High probability for SOS requests
+                location=f"SOS Emergency: {location_str}"
+            )
+            sos_data["alert_sent"] = True
+        except Exception as e:
+            print(f"Failed to send SOS alert: {e}")
+            sos_data["alert_sent"] = False
+        
+        return {
+            "message": "SOS request created successfully",
+            "sos": sos_data,
+            "response": "Emergency services have been notified and are responding"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/sos/history/{user_id}")
+async def get_sos_history(user_id: str, limit: int = 10):
+    """Get SOS history for a specific user"""
+    try:
+        # This would typically fetch from database
+        # For now, return mock data
+        mock_history = [
+            {
+                "id": "sos_001",
+                "user_id": user_id,
+                "location": [28.6139, 77.2090],
+                "message": "Trapped in flooded building, need immediate rescue",
+                "emergency_type": "FLOOD",
+                "timestamp": "2025-09-14 01:00:00",
+                "status": "RESOLVED",
+                "assigned_officer": "Officer Rajesh Kumar",
+                "response_time": 15,
+                "resolution_notes": "Successfully rescued and evacuated to safety",
+                "resolved_at": "2025-09-14 01:15:00"
+            }
+        ]
+        
+        return {
+            "sos_requests": mock_history,
+            "total": len(mock_history)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/sos/update/{sos_id}")
+async def update_sos_request(sos_id: str, update_data: dict):
+    """Update SOS request status"""
+    try:
+        # This would typically update in database
+        return {
+            "message": "SOS request updated successfully",
+            "sos_id": sos_id,
+            "updates": update_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Admin Panel Endpoints
+
+@app.get("/admin/stats")
+async def get_admin_stats():
+    """Get comprehensive system statistics for admin panel"""
+    try:
+        # Get alert stats
+        alert_stats = alert_system.get_alert_stats()
+        
+        # Mock additional stats (in real implementation, these would come from database)
+        stats = {
+            "total_users": 1250,
+            "active_users": 890,
+            "total_alerts": alert_stats["total_alerts"],
+            "active_alerts": alert_stats["high_risk_alerts"],
+            "total_sos_requests": 45,
+            "pending_sos_requests": 8,
+            "total_shelters": 12,
+            "available_shelters": 9,
+            "last_updated": "2025-09-14 01:00:00"
+        }
+        
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/sos-requests")
+async def get_admin_sos_requests():
+    """Get all SOS requests for admin management"""
+    try:
+        # Mock SOS requests data (in real implementation, this would come from database)
+        sos_requests = [
+            {
+                "id": "sos_001",
+                "user_id": "user_123",
+                "location": [28.6139, 77.2090],
+                "message": "Trapped in flooded building, need immediate rescue",
+                "emergency_type": "FLOOD",
+                "timestamp": "2025-09-14 01:00:00",
+                "status": "PENDING",
+                "assigned_officer": None,
+                "response_time": None,
+                "resolution_notes": None,
+                "resolved_at": None
+            },
+            {
+                "id": "sos_002",
+                "user_id": "user_456",
+                "location": [28.6200, 77.2200],
+                "message": "Medical emergency during flood evacuation",
+                "emergency_type": "MEDICAL",
+                "timestamp": "2025-09-14 00:45:00",
+                "status": "ASSIGNED",
+                "assigned_officer": "Officer Rajesh Kumar",
+                "response_time": 12,
+                "resolution_notes": None,
+                "resolved_at": None
+            },
+            {
+                "id": "sos_003",
+                "user_id": "user_789",
+                "location": [28.6100, 77.2000],
+                "message": "Structural damage to building, evacuation needed",
+                "emergency_type": "STRUCTURAL",
+                "timestamp": "2025-09-14 00:30:00",
+                "status": "IN_PROGRESS",
+                "assigned_officer": "Officer Priya Sharma",
+                "response_time": 8,
+                "resolution_notes": "Rescue team dispatched",
+                "resolved_at": None
+            },
+            {
+                "id": "sos_004",
+                "user_id": "user_101",
+                "location": [28.6300, 77.2400],
+                "message": "Family trapped in vehicle during flood",
+                "emergency_type": "FLOOD",
+                "timestamp": "2025-09-14 00:15:00",
+                "status": "RESOLVED",
+                "assigned_officer": "Officer Amit Singh",
+                "response_time": 15,
+                "resolution_notes": "Family successfully rescued and evacuated to safety",
+                "resolved_at": "2025-09-14 00:30:00"
+            }
+        ]
+        
+        return {
+            "sos_requests": sos_requests,
+            "total": len(sos_requests)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/shelters")
+async def get_admin_shelters():
+    """Get all shelters for admin management"""
+    try:
+        # This would typically fetch from database
+        # For now, return the same data as evacuation centers
+        return await get_evacuation_centers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/admin/shelter/{shelter_id}")
+async def update_shelter(shelter_id: str, update_data: dict):
+    """Update shelter information"""
+    try:
+        # This would typically update in database
+        return {
+            "message": "Shelter updated successfully",
+            "shelter_id": shelter_id,
+            "updates": update_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # System Monitoring and Debug Endpoints
 

@@ -46,6 +46,12 @@ interface GISMappingProps {
   onBack?: () => void;
   predictionLocation?: [number, number] | null;
   prediction?: PredictionResponse | null;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    role: 'user' | 'admin';
+  };
 }
 
 const FloodRiskLegend: React.FC = () => (
@@ -111,6 +117,22 @@ const FloodRiskLegend: React.FC = () => (
       <div style={{ width: '20px', height: '3px', backgroundColor: '#ef4444', marginRight: '8px', borderRadius: '2px', border: '2px dashed #dc2626' }}></div>
       <span style={{ fontSize: '12px' }}>Your Prediction Zone</span>
     </div>
+    <hr style={{ margin: '10px 0' }} />
+    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Emergency Locations</h4>
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+      <div style={{ width: '20px', height: '20px', backgroundColor: '#ef4444', borderRadius: '50%', marginRight: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', border: '2px solid white' }}>⚠️</div>
+      <span style={{ fontSize: '12px' }}>Flood-Prone Areas</span>
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+      <div style={{ width: '20px', height: '20px', backgroundColor: '#10b981', borderRadius: '50%', marginRight: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', border: '2px solid white' }}>🏥</div>
+      <span style={{ fontSize: '12px' }}>Emergency Shelters</span>
+    </div>
+    {user?.role === 'admin' && (
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ width: '20px', height: '20px', backgroundColor: '#dc2626', borderRadius: '50%', marginRight: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', border: '2px solid white' }}>🆘</div>
+        <span style={{ fontSize: '12px' }}>Active SOS Requests</span>
+      </div>
+    )}
   </div>
 );
 
@@ -150,11 +172,79 @@ const MapController: React.FC<{ center: [number, number]; onLocationSelect?: (lo
   return null;
 };
 
-const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predictionLocation, prediction }) => {
+const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predictionLocation, prediction, user }) => {
   const [floodRiskZones, setFloodRiskZones] = useState<FloodRiskZone[]>([]);
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [selectedZone, setSelectedZone] = useState<FloodRiskZone | null>(null);
   const [mapCenter] = useState<[number, number]>([28.6139, 77.2090]); // New Delhi coordinates
+  const [sosRequests, setSosRequests] = useState<any[]>([]);
+  const [showSendAlert, setShowSendAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [isSendingAlert, setIsSendingAlert] = useState(false);
+
+  // Flood-prone places and shelter data
+  const floodPronePlaces = [
+    // Assam
+    { name: 'Majuli Island', location: [26.9500, 94.1667], state: 'Assam', type: 'flood-prone' },
+    { name: 'Barpeta District', location: [26.3229, 91.0062], state: 'Assam', type: 'flood-prone' },
+    { name: 'Dhemaji District', location: [27.4833, 94.5833], state: 'Assam', type: 'flood-prone' },
+    { name: 'Lakhimpur District', location: [27.3500, 94.1167], state: 'Assam', type: 'flood-prone' },
+    { name: 'Morigaon District', location: [26.2500, 92.3500], state: 'Assam', type: 'flood-prone' },
+    
+    // Odisha
+    { name: 'Puri District', location: [19.8139, 85.8312], state: 'Odisha', type: 'flood-prone' },
+    { name: 'Ganjam District', location: [19.3167, 84.7833], state: 'Odisha', type: 'flood-prone' },
+    { name: 'Balasore District', location: [21.4942, 86.9336], state: 'Odisha', type: 'flood-prone' },
+    { name: 'Khordha District', location: [20.1797, 85.6167], state: 'Odisha', type: 'flood-prone' },
+    { name: 'Kendrapara District', location: [20.5000, 86.4167], state: 'Odisha', type: 'flood-prone' },
+    { name: 'Bhadrak District', location: [21.0667, 86.5000], state: 'Odisha', type: 'flood-prone' },
+    
+    // Tripura
+    { name: 'Tripura Low-lying Areas', location: [23.9408, 91.9882], state: 'Tripura', type: 'flood-prone' },
+    
+    // Bihar
+    { name: 'Bhagalpur District', location: [25.2445, 86.9718], state: 'Bihar', type: 'flood-prone' },
+    { name: 'East Champaran', location: [26.5833, 84.9167], state: 'Bihar', type: 'flood-prone' },
+    { name: 'Sitamarhi District', location: [26.6000, 85.4833], state: 'Bihar', type: 'flood-prone' },
+    { name: 'Muzaffarpur District', location: [26.1167, 85.4000], state: 'Bihar', type: 'flood-prone' },
+    { name: 'Khagaria District', location: [25.5000, 86.4833], state: 'Bihar', type: 'flood-prone' }
+  ];
+
+  const shelterLocations = [
+    // Assam Shelters
+    { name: 'Karatipar Shelter (Majuli)', location: [26.9500, 94.1667], state: 'Assam', capacity: 200, type: 'shelter' },
+    { name: 'Kanaragaon Shelter (Barpeta)', location: [26.3229, 91.0062], state: 'Assam', capacity: 150, type: 'shelter' },
+    { name: 'Bahgarh Shelter (Lakhimpur)', location: [27.3500, 94.1167], state: 'Assam', capacity: 180, type: 'shelter' },
+    { name: 'Baksa School Shelter', location: [26.7000, 91.4333], state: 'Assam', capacity: 100, type: 'shelter' },
+    { name: 'Sonitpur School Shelter', location: [26.6167, 92.8000], state: 'Assam', capacity: 120, type: 'shelter' },
+    { name: 'Biswanath School Shelter', location: [26.7167, 93.1500], state: 'Assam', capacity: 100, type: 'shelter' },
+    { name: 'Golaghat School Shelter', location: [26.5167, 93.9667], state: 'Assam', capacity: 110, type: 'shelter' },
+    { name: 'Dibrugarh School Shelter', location: [27.4833, 94.9167], state: 'Assam', capacity: 130, type: 'shelter' },
+    { name: 'Sivasagar School Shelter', location: [26.9833, 94.6333], state: 'Assam', capacity: 120, type: 'shelter' },
+    
+    // Odisha Shelters
+    { name: 'Puri Multipurpose Shelter', location: [19.8139, 85.8312], state: 'Odisha', capacity: 300, type: 'shelter' },
+    { name: 'Ganjam Multipurpose Shelter', location: [19.3167, 84.7833], state: 'Odisha', capacity: 250, type: 'shelter' },
+    { name: 'Balasore Multipurpose Shelter', location: [21.4942, 86.9336], state: 'Odisha', capacity: 200, type: 'shelter' },
+    { name: 'Khurda Multipurpose Shelter', location: [20.1797, 85.6167], state: 'Odisha', capacity: 180, type: 'shelter' },
+    { name: 'Kendrapara Multipurpose Shelter', location: [20.5000, 86.4167], state: 'Odisha', capacity: 220, type: 'shelter' },
+    { name: 'Bhadrak Multipurpose Shelter', location: [21.0667, 86.5000], state: 'Odisha', capacity: 190, type: 'shelter' },
+    { name: 'Anji Shelter (Balasore)', location: [21.5000, 86.9000], state: 'Odisha', capacity: 150, type: 'shelter' },
+    { name: 'Ganthiapali Shelter (Baragada)', location: [20.2000, 85.5000], state: 'Odisha', capacity: 160, type: 'shelter' },
+    { name: 'Nandapur Shelter (Bhadrak)', location: [21.1000, 86.4000], state: 'Odisha', capacity: 140, type: 'shelter' },
+    
+    // Tripura Shelters
+    { name: 'Tripura Relief Camp 1', location: [23.9408, 91.9882], state: 'Tripura', capacity: 100, type: 'shelter' },
+    { name: 'Tripura Relief Camp 2', location: [23.8000, 91.8000], state: 'Tripura', capacity: 80, type: 'shelter' },
+    
+    // Bihar Shelters
+    { name: 'Urdu Middle School (Bhagalpur)', location: [25.2445, 86.9718], state: 'Bihar', capacity: 200, type: 'shelter' },
+    { name: 'Saraswati Vidya Mandir (Bhagalpur)', location: [25.2500, 86.9800], state: 'Bihar', capacity: 150, type: 'shelter' },
+    { name: 'CTS Ground (Nath Nagar)', location: [25.2400, 86.9700], state: 'Bihar', capacity: 300, type: 'shelter' },
+    { name: 'Rain Basera Lalbagh (Darbhanga)', location: [26.1667, 85.9000], state: 'Bihar', capacity: 120, type: 'shelter' },
+    { name: 'Rain Basera Katihar', location: [25.5333, 87.5833], state: 'Bihar', capacity: 100, type: 'shelter' },
+    { name: 'Rain Basera Khagaria', location: [25.5000, 86.4833], state: 'Bihar', capacity: 110, type: 'shelter' }
+  ];
 
   // Fetch data from backend APIs
   useEffect(() => {
@@ -167,6 +257,13 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
         // Fetch sensor data
         const sensorsResponse = await fetch('http://localhost:8002/gis/sensors');
         const sensorsData = await sensorsResponse.json();
+
+        // Fetch SOS requests for admin
+        if (user?.role === 'admin') {
+          const sosResponse = await fetch('http://localhost:8002/admin/sos-requests');
+          const sosData = await sosResponse.json();
+          setSosRequests(sosData.sos_requests || []);
+        }
 
         // Transform data to match component interfaces
         const transformedZones: FloodRiskZone[] = zonesData.map((zone: any) => ({
@@ -211,7 +308,40 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     };
 
     fetchGISData();
-  }, []);
+  }, [user?.role]);
+
+  const sendAlertToLocation = async (location: [number, number], message: string) => {
+    if (!user || user.role !== 'admin') return;
+    
+    setIsSendingAlert(true);
+    try {
+      const response = await fetch('http://localhost:8002/admin/send-alert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          location: location,
+          message: message,
+          admin_id: user.id,
+          alert_type: 'LOCATION_SPECIFIC'
+        }),
+      });
+
+      if (response.ok) {
+        alert('✅ Alert sent successfully to the selected location!');
+        setShowSendAlert(false);
+        setAlertMessage('');
+      } else {
+        throw new Error('Failed to send alert');
+      }
+    } catch (error) {
+      console.error('Error sending alert:', error);
+      alert('❌ Failed to send alert. Please try again.');
+    } finally {
+      setIsSendingAlert(false);
+    }
+  };
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
@@ -477,6 +607,167 @@ ${prediction.probability > zone.probability ? '⚠️ Risk has INCREASED' :
           </Marker>
         ))}
 
+        {/* Flood-Prone Places */}
+        {floodPronePlaces.map((place, index) => (
+          <Marker 
+            key={`flood-prone-${index}`} 
+            position={place.location}
+            icon={L.divIcon({
+              html: `
+                <div style="
+                  background: #ef4444;
+                  width: 20px;
+                  height: 20px;
+                  border-radius: 50%;
+                  border: 3px solid white;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 12px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                ">⚠️</div>
+              `,
+              className: 'flood-prone-marker',
+              iconSize: [20, 20],
+              iconAnchor: [10, 10]
+            })}
+          >
+            <Popup>
+              <div style={{ minWidth: '200px' }}>
+                <h3 style={{ margin: '0 0 10px 0', color: '#ef4444' }}>
+                  ⚠️ {place.name}
+                </h3>
+                <p style={{ margin: '5px 0' }}><strong>State:</strong> {place.state}</p>
+                <p style={{ margin: '5px 0' }}><strong>Type:</strong> Flood-Prone Area</p>
+                <p style={{ margin: '5px 0' }}><strong>Coordinates:</strong> {place.location[0].toFixed(4)}, {place.location[1].toFixed(4)}</p>
+                <div style={{
+                  background: '#fef2f2',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: '1px solid #fecaca',
+                  marginTop: '10px'
+                }}>
+                  <p style={{ margin: '0', fontSize: '12px', color: '#991b1b', fontWeight: '500' }}>
+                    ⚠️ High flood risk area - Monitor closely during monsoon
+                  </p>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Shelter Locations */}
+        {shelterLocations.map((shelter, index) => (
+          <Marker 
+            key={`shelter-${index}`} 
+            position={shelter.location}
+            icon={L.divIcon({
+              html: `
+                <div style="
+                  background: #10b981;
+                  width: 25px;
+                  height: 25px;
+                  border-radius: 50%;
+                  border: 3px solid white;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 14px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                ">🏥</div>
+              `,
+              className: 'shelter-marker',
+              iconSize: [25, 25],
+              iconAnchor: [12.5, 12.5]
+            })}
+          >
+            <Popup>
+              <div style={{ minWidth: '220px' }}>
+                <h3 style={{ margin: '0 0 10px 0', color: '#10b981' }}>
+                  🏥 {shelter.name}
+                </h3>
+                <p style={{ margin: '5px 0' }}><strong>State:</strong> {shelter.state}</p>
+                <p style={{ margin: '5px 0' }}><strong>Capacity:</strong> {shelter.capacity} people</p>
+                <p style={{ margin: '5px 0' }}><strong>Type:</strong> {shelter.type === 'shelter' ? 'Emergency Shelter' : 'Relief Camp'}</p>
+                <p style={{ margin: '5px 0' }}><strong>Coordinates:</strong> {shelter.location[0].toFixed(4)}, {shelter.location[1].toFixed(4)}</p>
+                <div style={{
+                  background: '#f0fdf4',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: '1px solid #bbf7d0',
+                  marginTop: '10px'
+                }}>
+                  <p style={{ margin: '0', fontSize: '12px', color: '#166534', fontWeight: '500' }}>
+                    ✅ Safe evacuation center - Available for emergency use
+                  </p>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* SOS Requests (Admin Only) */}
+        {user?.role === 'admin' && sosRequests.map((sos) => (
+          <Marker 
+            key={sos.id} 
+            position={sos.location}
+            icon={L.divIcon({
+              html: `
+                <div style="
+                  background: #dc2626;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 50%;
+                  border: 4px solid white;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 16px;
+                  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+                  animation: pulse 2s infinite;
+                ">🆘</div>
+              `,
+              className: 'sos-marker',
+              iconSize: [30, 30],
+              iconAnchor: [15, 15]
+            })}
+          >
+            <Popup>
+              <div style={{ minWidth: '250px' }}>
+                <h3 style={{ margin: '0 0 10px 0', color: '#dc2626' }}>
+                  🆘 Emergency SOS Request
+                </h3>
+                <p style={{ margin: '5px 0' }}><strong>Request ID:</strong> {sos.id}</p>
+                <p style={{ margin: '5px 0' }}><strong>Emergency Type:</strong> {sos.emergencyType}</p>
+                <p style={{ margin: '5px 0' }}><strong>Status:</strong> 
+                  <span style={{ 
+                    color: sos.status === 'PENDING' ? '#f59e0b' : 
+                           sos.status === 'RESOLVED' ? '#10b981' : '#3b82f6',
+                    marginLeft: '5px'
+                  }}>
+                    {sos.status}
+                  </span>
+                </p>
+                <p style={{ margin: '5px 0' }}><strong>Time:</strong> {new Date(sos.timestamp).toLocaleString()}</p>
+                {sos.message && (
+                  <p style={{ margin: '5px 0' }}><strong>Message:</strong> {sos.message}</p>
+                )}
+                <div style={{
+                  background: '#fef2f2',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: '1px solid #fecaca',
+                  marginTop: '10px'
+                }}>
+                  <p style={{ margin: '0', fontSize: '12px', color: '#991b1b', fontWeight: '500' }}>
+                    🚨 Active emergency - Requires immediate attention
+                  </p>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
         {/* YOUR SPECIFIC PREDICTION - Shows when you click and predict */}
         {predictionLocation && prediction && (
           <>
@@ -669,6 +960,32 @@ ${prediction.probability > zone.probability ? '⚠️ Risk has INCREASED' :
                           <span>Emergency alerts sent to {prediction.alert_id ? 'subscribers' : 'system'}</span>
                         </div>
                       )}
+
+                      {/* Send Alert Button for Admin */}
+                      {user?.role === 'admin' && (
+                        <div style={{ marginTop: '15px' }}>
+                          <button
+                            style={{
+                              width: '100%',
+                              padding: '10px 16px',
+                              backgroundColor: '#dc2626',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px'
+                            }}
+                            onClick={() => setShowSendAlert(true)}
+                          >
+                            🚨 Send Alert to This Location
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -853,6 +1170,135 @@ ${prediction.probability > zone.probability ? '⚠️ Risk has INCREASED' :
           >
             Send Alert to Zone
           </button>
+        </div>
+      )}
+
+      {/* Send Alert Modal */}
+      {showSendAlert && predictionLocation && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '30px',
+            borderRadius: '12px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ margin: '0 0 10px 0', color: '#dc2626' }}>
+                🚨 Send Emergency Alert
+              </h2>
+              <p style={{ margin: '0', color: '#6b7280', fontSize: '14px' }}>
+                Send an emergency alert to the selected location: {predictionLocation[0].toFixed(4)}, {predictionLocation[1].toFixed(4)}
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#374151' }}>
+                Alert Message
+              </label>
+              <textarea
+                value={alertMessage}
+                onChange={(e) => setAlertMessage(e.target.value)}
+                placeholder="Enter emergency alert message for this location..."
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  minHeight: '100px',
+                  resize: 'vertical'
+                }}
+                maxLength={500}
+              />
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                {alertMessage.length}/500 characters
+              </div>
+            </div>
+
+            <div style={{
+              background: '#fef3c7',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #f59e0b',
+              marginBottom: '20px'
+            }}>
+              <p style={{ margin: '0', fontSize: '13px', color: '#92400e' }}>
+                ⚠️ <strong>Warning:</strong> This alert will be sent to all users in the vicinity of this location. 
+                Only use for genuine emergencies.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowSendAlert(false);
+                  setAlertMessage('');
+                }}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => sendAlertToLocation(predictionLocation, alertMessage)}
+                disabled={!alertMessage.trim() || isSendingAlert}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: !alertMessage.trim() || isSendingAlert ? '#9ca3af' : '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: !alertMessage.trim() || isSendingAlert ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isSendingAlert ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    🚨 Send Alert
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
