@@ -39,7 +39,11 @@ interface AlertStats {
   last_alert?: Alert;
 }
 
-const AlertSystem: React.FC = () => {
+interface AlertSystemProps {
+  onBack?: () => void;
+}
+
+const AlertSystem: React.FC<AlertSystemProps> = ({ onBack }) => {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [stats, setStats] = useState<AlertStats | null>(null);
@@ -163,7 +167,7 @@ const AlertSystem: React.FC = () => {
         position: 'relative'
       }}>
         <button
-          onClick={() => window.location.reload()}
+          onClick={onBack || (() => window.history.back())}
           style={{
             position: 'absolute',
             left: '24px',
@@ -181,7 +185,7 @@ const AlertSystem: React.FC = () => {
             gap: '8px'
           }}
         >
-          ← Back to Prediction
+          ← Back to Dashboard
         </button>
         <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold' }}>🚨 Alert Management System</h1>
         <p style={{ margin: '8px 0 0 0', opacity: 0.9 }}>Manage subscribers and monitor flood alerts</p>
