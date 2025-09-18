@@ -56,7 +56,7 @@ interface AdminPanelProps {
     name: string;
     email: string;
     role: 'user' | 'admin';
-  };
+  } | null;
   onBack?: () => void;
 }
 
@@ -70,8 +70,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onBack }) => {
   const [selectedSOS, setSelectedSOS] = useState<SOSRequest | null>(null);
   const [showSOSModal, setShowSOSModal] = useState(false);
 
+  useEffect(() => {
+    fetchAdminData();
+    const interval = setInterval(fetchAdminData, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   // Check if user has admin access
-  if (user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     return (
       <div className="admin-container">
         <div className="access-denied">
@@ -87,12 +93,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onBack }) => {
       </div>
     );
   }
-
-  useEffect(() => {
-    fetchAdminData();
-    const interval = setInterval(fetchAdminData, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
 
   const fetchAdminData = async () => {
     try {

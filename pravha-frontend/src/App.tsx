@@ -257,7 +257,7 @@ function App() {
   if ((currentView as ViewType) === 'admin') {
     return (
       <AdminPanel 
-        user={user!}
+        user={user}
         onBack={() => setCurrentView('dashboard' as ViewType)} 
       />
     );

@@ -42,29 +42,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
     }
   ];
 
-  const testimonials = [
-    {
-      name: 'Dr. Priya Sharma',
-      role: 'Disaster Management Officer',
-      location: 'Delhi',
-      quote: 'Pravha has revolutionized our flood response capabilities. The early warning system has helped us evacuate thousands of people safely.',
-      avatar: '👩‍💼'
-    },
-    {
-      name: 'Rajesh Kumar',
-      role: 'Resident',
-      location: 'Yamuna Nagar',
-      quote: 'Thanks to Pravha alerts, my family was able to evacuate safely before the flood hit our area. The system saved our lives.',
-      avatar: '👨‍👩‍👧‍👦'
-    },
-    {
-      name: 'Captain Meera Singh',
-      role: 'NDRF Officer',
-      location: 'Mumbai',
-      quote: 'The real-time coordination features have made our rescue operations 60% more efficient. Outstanding technology.',
-      avatar: '👩‍✈️'
-    }
-  ];
+
 
   useEffect(() => {
     // Animate stats on load
@@ -170,13 +148,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                   <div className="map-pulse"></div>
                 </div>
                 <div className="preview-alerts">
-                  <div className="alert-item alert-high">
-                    <span className="alert-icon">🚨</span>
-                    <span className="alert-text">High Risk Zone Detected</span>
-                  </div>
-                  <div className="alert-item alert-moderate">
-                    <span className="alert-icon">⚠️</span>
-                    <span className="alert-text">Moderate Risk Alert</span>
+                  <div className="alerts-scroll">
+                    <div className="alert-item alert-high">
+                      <span className="alert-icon">🚨</span>
+                      <span className="alert-text">High Risk Zone Detected</span>
+                    </div>
+                    <div className="alert-item alert-moderate">
+                      <span className="alert-icon">⚠️</span>
+                      <span className="alert-text">Moderate Risk Alert</span>
+                    </div>
+                    <div className="alert-item alert-low">
+                      <span className="alert-icon">✅</span>
+                      <span className="alert-text">Area Clear - No Risk</span>
+                    </div>
+                    <div className="alert-item alert-info">
+                      <span className="alert-icon">ℹ️</span>
+                      <span className="alert-text">Weather Update Available</span>
+                    </div>
+                    <div className="alert-item alert-high">
+                      <span className="alert-icon">🌊</span>
+                      <span className="alert-text">Water Level Rising</span>
+                    </div>
+                    <div className="alert-item alert-moderate">
+                      <span className="alert-icon">🌧️</span>
+                      <span className="alert-text">Heavy Rainfall Expected</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -258,34 +254,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="testimonials-section">
-        <div className="container">
-          <div className="section-header">
-            <h2 className="section-title">Trusted by Professionals</h2>
-            <p className="section-subtitle">
-              Hear from disaster management experts and citizens who rely on Pravaha
-            </p>
-          </div>
-          
-          <div className="testimonials-grid">
-            {testimonials.map((testimonial, index) => (
-              <div key={index} className="testimonial-card">
-                <div className="testimonial-content">
-                  <div className="testimonial-avatar">{testimonial.avatar}</div>
-                  <blockquote className="testimonial-quote">
-                    "{testimonial.quote}"
-                  </blockquote>
-                  <div className="testimonial-author">
-                    <div className="author-name">{testimonial.name}</div>
-                    <div className="author-role">{testimonial.role}, {testimonial.location}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* CTA Section */}
       <section className="cta-section">

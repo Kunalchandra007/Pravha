@@ -51,10 +51,10 @@ interface GISMappingProps {
     name: string;
     email: string;
     role: 'user' | 'admin';
-  };
+  } | null;
 }
 
-const FloodRiskLegend: React.FC = () => (
+const FloodRiskLegend: React.FC<{user?: {role: string} | null}> = ({user}) => (
   <div style={{
     position: 'absolute',
     top: '10px',
@@ -183,7 +183,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
   const [isSendingAlert, setIsSendingAlert] = useState(false);
 
   // Flood-prone places and shelter data
-  const floodPronePlaces = [
+  const floodPronePlaces: Array<{name: string; location: [number, number]; state: string; type: string}> = [
     // Assam
     { name: 'Majuli Island', location: [26.9500, 94.1667], state: 'Assam', type: 'flood-prone' },
     { name: 'Barpeta District', location: [26.3229, 91.0062], state: 'Assam', type: 'flood-prone' },
@@ -210,7 +210,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     { name: 'Khagaria District', location: [25.5000, 86.4833], state: 'Bihar', type: 'flood-prone' }
   ];
 
-  const shelterLocations = [
+  const shelterLocations: Array<{name: string; location: [number, number]; state: string; capacity: number; type: string}> = [
     // Assam Shelters
     { name: 'Karatipar Shelter (Majuli)', location: [26.9500, 94.1667], state: 'Assam', capacity: 200, type: 'shelter' },
     { name: 'Kanaragaon Shelter (Barpeta)', location: [26.3229, 91.0062], state: 'Assam', capacity: 150, type: 'shelter' },
@@ -1070,7 +1070,7 @@ ${prediction.probability > zone.probability ? '⚠️ Risk has INCREASED' :
       </MapContainer>
 
       {/* Legend */}
-      <FloodRiskLegend />
+      <FloodRiskLegend user={user} />
 
       {/* Zone Details Panel */}
       {selectedZone && (
