@@ -63,40 +63,89 @@ const AlertSystem: React.FC<AlertSystemProps> = ({ onBack }) => {
 
   const fetchSubscribers = async () => {
     try {
-      const response = await fetch('http://localhost:8002/subscribers');
-      const data = await response.json();
-      setSubscribers(data.subscribers);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('http://localhost:8002/subscribers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSubscribers(data.subscribers || []);
+      } else {
+        console.log('Subscribers endpoint returned:', response.status);
+        setSubscribers([]);
+      }
     } catch (error) {
       console.error('Failed to fetch subscribers:', error);
+      setSubscribers([]);
     }
   };
 
   const fetchAlerts = async () => {
     try {
-      const response = await fetch('http://localhost:8002/alerts/history?limit=20');
-      const data = await response.json();
-      setAlerts(data.alerts);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('http://localhost:8002/alerts/history?limit=20', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAlerts(data.alerts || []);
+      } else {
+        setAlerts([]);
+      }
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
+      setAlerts([]);
     }
   };
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:8002/alerts/stats');
-      const data = await response.json();
-      setStats(data);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('http://localhost:8002/alerts/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      } else {
+        // API endpoint doesn't exist, set default stats
+        setStats({
+          total_alerts: 0,
+          high_risk_alerts: 0,
+          moderate_risk_alerts: 0,
+          low_risk_alerts: 0,
+          total_subscribers: 0
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+      setStats({
+        total_alerts: 0,
+        high_risk_alerts: 0,
+        moderate_risk_alerts: 0,
+        low_risk_alerts: 0,
+        total_subscribers: 0
+      });
     }
   };
 
   const addSubscriber = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('http://localhost:8002/subscribers', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(newSubscriber),
@@ -115,9 +164,11 @@ const AlertSystem: React.FC<AlertSystemProps> = ({ onBack }) => {
 
   const broadcastTestAlert = async (riskLevel: string, probability: number) => {
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('http://localhost:8002/alerts/broadcast', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -224,7 +275,7 @@ const AlertSystem: React.FC<AlertSystemProps> = ({ onBack }) => {
         {/* Subscribers Section */}
         <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Subscribers ({subscribers.length})</h2>
+            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Subscribers ({subscribers?.length || 0})</h2>
             <button
               onClick={() => setShowAddSubscriber(true)}
               style={{
@@ -340,7 +391,7 @@ const AlertSystem: React.FC<AlertSystemProps> = ({ onBack }) => {
           )}
 
           <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            {subscribers.map((subscriber) => (
+            {(subscribers || []).map((subscriber) => (
               <div key={subscriber.id} style={{ 
                 padding: '16px', 
                 border: '1px solid #e5e7eb', 
@@ -417,7 +468,7 @@ const AlertSystem: React.FC<AlertSystemProps> = ({ onBack }) => {
           </div>
 
           <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            {alerts.map((alert) => (
+            {(alerts || []).map((alert) => (
               <div key={alert.id} style={{ 
                 padding: '16px', 
                 border: '1px solid #e5e7eb', 

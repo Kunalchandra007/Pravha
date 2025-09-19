@@ -1,5 +1,5 @@
 """
-MongoDB Database Models for Pravaha Flood Management System
+MongoDB Database Models for Pravha Flood Management System
 """
 
 from pydantic import BaseModel, EmailStr, Field

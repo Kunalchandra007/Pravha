@@ -139,14 +139,14 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToLand
           </button>
           <div className="auth-logo">
             <span className="logo-icon">🌊</span>
-            <span className="logo-text">Pravaha</span>
+            <span className="logo-text">Pravha</span>
           </div>
         </div>
 
         <div className="auth-card">
           <div className="auth-card-header">
             <h1 className="auth-title">Create Account</h1>
-            <p className="auth-subtitle">Join Pravaha to protect your community</p>
+            <p className="auth-subtitle">Join Pravha to protect your community</p>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -328,20 +328,7 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToLand
               )}
             </button>
 
-            <div className="auth-divider">
-              <span>or</span>
-            </div>
 
-            <div className="social-login">
-              <button type="button" className="social-button google">
-                <span className="social-icon">🔍</span>
-                Continue with Google
-              </button>
-              <button type="button" className="social-button facebook">
-                <span className="social-icon">📘</span>
-                Continue with Facebook
-              </button>
-            </div>
           </form>
 
           <div className="auth-footer">

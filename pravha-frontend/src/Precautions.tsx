@@ -57,18 +57,18 @@ const Precautions: React.FC<{ onBack?: () => void }>= ({ onBack }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'pravaha_emergency_kit_checklist.json';
+    a.download = 'pravha_emergency_kit_checklist.json';
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const downloadPlan = () => {
-    const content = `Pravaha Family Emergency Plan\n\nHousehold: ${familyPlan.householdName}\nMeeting Point: ${familyPlan.meetingPoint}\nEmergency Contacts: ${familyPlan.emergencyContacts}\nMedical Needs: ${familyPlan.medicalNeeds}\n`;
+    const content = `Pravha Family Emergency Plan\n\nHousehold: ${familyPlan.householdName}\nMeeting Point: ${familyPlan.meetingPoint}\nEmergency Contacts: ${familyPlan.emergencyContacts}\nMedical Needs: ${familyPlan.medicalNeeds}\n`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'pravaha_family_emergency_plan.txt';
+    a.download = 'pravha_family_emergency_plan.txt';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -108,7 +108,7 @@ const Precautions: React.FC<{ onBack?: () => void }>= ({ onBack }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <SectionCard title="General Safety Guidelines" tone="ok">
             <ul style={{ margin: 0, paddingLeft: 20, color: '#065f46' }}>
-              <li>Stay informed using official channels and Pravaha alerts.</li>
+              <li>Stay informed using official channels and Pravha alerts.</li>
               <li>Avoid walking or driving through flood waters.</li>
               <li>Turn off electricity at the main breaker if instructed.</li>
               <li>Move valuables and hazardous materials to higher ground.</li>

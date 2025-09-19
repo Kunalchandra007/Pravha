@@ -8,6 +8,10 @@ import smtplib
 import requests
 from datetime import datetime
 from typing import List, Dict, Optional
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from email_config import get_email_config
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart

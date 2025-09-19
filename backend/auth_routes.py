@@ -1,5 +1,5 @@
 """
-Authentication API routes for Pravaha Flood Management System
+Authentication API routes for Pravha Flood Management System
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -251,13 +251,13 @@ async def get_demo_users():
     return {
         "demo_users": [
             {
-                "email": "user@pravaha.com",
+                "email": "user@pravha.com",
                 "password": "user12345",
                 "role": "user",
                 "description": "Regular citizen user"
             },
             {
-                "email": "admin@pravaha.com",
+                "email": "admin@pravha.com",
                 "password": "admin12345",
                 "role": "admin",
                 "description": "Government admin user"

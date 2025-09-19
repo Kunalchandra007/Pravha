@@ -1,5 +1,5 @@
 """
-Authentication system for Pravaha Flood Management System
+Authentication system for Pravha Flood Management System
 """
 
 from datetime import datetime, timedelta
@@ -233,7 +233,7 @@ def create_demo_users():
     demo_users = [
         UserCreate(
             name="Demo User",
-            email="user@pravaha.com",
+            email="user@pravha.com",
             password="user12345",
             phone="+919876543210",
             location="Delhi, India",
@@ -241,7 +241,7 @@ def create_demo_users():
         ),
         UserCreate(
             name="Admin User",
-            email="admin@pravaha.com",
+            email="admin@pravha.com",
             password="admin12345",
             phone="+919876543211",
             location="Delhi, India",

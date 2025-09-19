@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import SOSSystem from './components/SOSSystem';
 import ShelterFinder from './components/ShelterFinder';
 import AdminPanel from './components/AdminPanel';
+import CitizenPanel from './components/CitizenPanel';
 
 interface PredictionResponse {
   probability: number;
@@ -75,20 +76,12 @@ function App() {
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<ViewType>(() => {
-    // If user is already logged in, go to dashboard
-    const storedUser = localStorage.getItem('user_data');
-    return storedUser ? 'dashboard' as ViewType : 'landing' as ViewType;
-  });
+  const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [location, setLocation] = useState<string>('Unknown');
   const [enableAlerts, setEnableAlerts] = useState<boolean>(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [predictionLocation, setPredictionLocation] = useState<[number, number] | null>(null);
-  const [user, setUser] = useState<User | null>(() => {
-    // Check for stored user data on app load
-    const storedUser = localStorage.getItem('user_data');
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
 
   const handleFeatureChange = (name: string, value: number) => {
     setFeatureValues(prev => ({ ...prev, [name]: value }));
@@ -97,12 +90,14 @@ function App() {
   // Authentication handlers
   const handleLogin = (userData: User) => {
     setUser(userData);
-    setCurrentView('dashboard' as ViewType);
+    // Route admin users directly to admin panel, regular users to citizen panel
+    setCurrentView(userData.role === 'admin' ? 'admin' as ViewType : 'dashboard' as ViewType);
   };
 
   const handleSignup = (userData: User) => {
     setUser(userData);
-    setCurrentView('dashboard' as ViewType);
+    // Route admin users directly to admin panel, regular users to citizen panel
+    setCurrentView(userData.role === 'admin' ? 'admin' as ViewType : 'dashboard' as ViewType);
   };
 
   const handleLogout = () => {
@@ -151,16 +146,28 @@ function App() {
         
         console.log('Sending prediction request:', requestBody);
         
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('Authentication token not found. Please log in again.');
+        }
+
         const response = await fetch('http://localhost:8002/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please log in again.');
+        } else if (response.status === 403) {
+          throw new Error('Access denied.');
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
       }
 
       const data: PredictionResponse = await response.json();
@@ -258,7 +265,7 @@ function App() {
     return (
       <AdminPanel 
         user={user}
-        onBack={() => setCurrentView('dashboard' as ViewType)} 
+        onBack={() => setCurrentView('dashboard' as ViewType)}
       />
     );
   }
@@ -295,19 +302,28 @@ function App() {
   }
 
   if ((currentView as ViewType) === 'dashboard') {
-    return (
-      <Dashboard 
-        user={user!}
-        onLogout={handleLogout}
-        onNavigate={(view) => setCurrentView(view as ViewType)}
-      />
-    );
+    // Use CitizenPanel for regular users, keep Dashboard for backward compatibility
+    if (user?.role === 'admin') {
+      return (
+        <AdminPanel 
+          user={user}
+          onBack={() => setCurrentView('landing' as ViewType)}
+        />
+      );
+    } else {
+      return (
+        <CitizenPanel 
+          user={user!}
+          onBack={() => setCurrentView('landing' as ViewType)}
+        />
+      );
+    }
   }
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px' }}>
       <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-        <h1 style={{ color: 'white', fontSize: '48px', marginBottom: '20px' }}>Welcome to Pravaha</h1>
+        <h1 style={{ color: 'white', fontSize: '48px', marginBottom: '20px' }}>Welcome to Pravha</h1>
         <p style={{ color: 'white', fontSize: '20px', marginBottom: '40px' }}>AI-Powered Flood Management System</p>
         <button
           onClick={() => setCurrentView('dashboard' as ViewType)}

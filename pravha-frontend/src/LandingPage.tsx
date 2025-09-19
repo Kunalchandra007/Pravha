@@ -96,7 +96,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
         <div className="hero-content">
           <div className="hero-text">
             <h1 className="hero-title">
-              <span className="title-main">Pravaha</span>
+              <span className="title-main">Pravha</span>
               <span className="title-sub">Flood Management System</span>
             </h1>
             <p className="hero-description">
@@ -138,7 +138,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                   <span></span>
                   <span></span>
                 </div>
-                <span className="preview-title">Pravaha Dashboard</span>
+                <span className="preview-title">Pravha Dashboard</span>
               </div>
               <div className="preview-content">
                 <div className="preview-map">
@@ -215,7 +215,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             <div className="impact-text">
               <h2 className="impact-title">Making a Real Impact</h2>
               <p className="impact-description">
-                Pravaha has been deployed across multiple regions, providing critical flood 
+                Pravha has been deployed across multiple regions, providing critical flood 
                 management capabilities that have saved thousands of lives and prevented 
                 millions in property damage.
               </p>
@@ -262,7 +262,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
           <div className="cta-content">
             <h2 className="cta-title">Ready to Protect Your Community?</h2>
             <p className="cta-description">
-              Join thousands of users who trust Pravaha for comprehensive flood management
+              Join thousands of users who trust Pravha for comprehensive flood management
             </p>
             <div className="cta-buttons">
               <button className="btn-primary btn-large" onClick={onSignup}>
@@ -299,7 +299,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             <div className="footer-brand">
               <div className="footer-logo">
                 <span className="logo-icon">🌊</span>
-                <span className="logo-text">Pravaha</span>
+                <span className="logo-text">Pravha</span>
               </div>
               <p className="footer-description">
                 AI-powered flood management system saving lives through early warning and 
@@ -338,7 +338,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
           </div>
           <div className="footer-bottom">
             <p className="footer-copyright">
-              © 2024 Pravaha Flood Management System. All rights reserved.
+              © 2024 Pravha Flood Management System. All rights reserved.
             </p>
             <div className="footer-social">
               <a href="#twitter" className="social-link">🐦</a>

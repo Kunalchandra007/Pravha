@@ -75,14 +75,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
           </button>
           <div className="auth-logo">
             <span className="logo-icon">🌊</span>
-            <span className="logo-text">Pravaha</span>
+            <span className="logo-text">Pravha</span>
           </div>
         </div>
 
         <div className="auth-card">
           <div className="auth-card-header">
             <h1 className="auth-title">Welcome Back</h1>
-            <p className="auth-subtitle">Sign in to your Pravaha account</p>
+            <p className="auth-subtitle">Sign in to your Pravha account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -172,20 +172,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
               )}
             </button>
 
-            <div className="auth-divider">
-              <span>or</span>
-            </div>
 
-            <div className="social-login">
-              <button type="button" className="social-button google">
-                <span className="social-icon">🔍</span>
-                Continue with Google
-              </button>
-              <button type="button" className="social-button facebook">
-                <span className="social-icon">📘</span>
-                Continue with Facebook
-              </button>
-            </div>
           </form>
 
           <div className="auth-footer">

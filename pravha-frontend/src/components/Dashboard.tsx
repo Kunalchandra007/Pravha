@@ -248,7 +248,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onNavigate }) => 
         <div className="sidebar-header">
           <div className="logo">
             <span className="logo-icon">🌊</span>
-            {!sidebarCollapsed && <span className="logo-text">Pravaha</span>}
+            {!sidebarCollapsed && <span className="logo-text">Pravha</span>}
           </div>
           <button 
             className="collapse-btn"
