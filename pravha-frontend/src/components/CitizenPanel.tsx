@@ -52,6 +52,20 @@ const CitizenPanel = ({ user, onBack }: {
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Precautions state
+  const [emergencyKit, setEmergencyKit] = useState([
+    { id: 'water', label: 'Drinking water (3-day supply)', checked: false },
+    { id: 'food', label: 'Non-perishable food (3-day supply)', checked: false },
+    { id: 'meds', label: 'Prescription medicines', checked: false },
+    { id: 'firstaid', label: 'First-aid kit', checked: false },
+    { id: 'torch', label: 'Flashlight + batteries', checked: false },
+    { id: 'radio', label: 'Battery/hand-crank radio', checked: false },
+    { id: 'docs', label: 'Important documents (waterproof)', checked: false },
+    { id: 'cash', label: 'Cash and essentials', checked: false },
+    { id: 'clothes', label: 'Warm clothes & blankets', checked: false },
+    { id: 'hygiene', label: 'Hygiene items & sanitizer', checked: false },
+  ]);
+
   // Hardcoded shelters for demo
   const hardcodedShelters: Shelter[] = [
     {
@@ -269,6 +283,16 @@ const CitizenPanel = ({ user, onBack }: {
           <span>Find Shelters</span>
         </button>
         <button
+          className={`nav-item ${activeTab === 'precautions' ? 'active' : ''}`}
+          onClick={() => {
+            console.log('Precautions button clicked'); // Debug log
+            setActiveTab('precautions');
+          }}
+        >
+          <span className="nav-icon">🛡️</span>
+          <span>Safety Guide</span>
+        </button>
+        <button
           className={`nav-item ${activeTab === 'sos' ? 'active' : ''}`}
           onClick={() => setActiveTab('sos')}
         >
@@ -316,6 +340,9 @@ const CitizenPanel = ({ user, onBack }: {
             </button>
             <button className="action-btn shelters" onClick={() => setActiveTab('shelters')}>
               🏥 Find Shelters
+            </button>
+            <button className="action-btn precautions" onClick={() => setActiveTab('precautions')}>
+              🛡️ Safety Guide
             </button>
           </div>
         </div>
@@ -483,6 +510,176 @@ const CitizenPanel = ({ user, onBack }: {
     </div>
   );
 
+  const toggleKitItem = (id: string) => {
+    setEmergencyKit(prev => prev.map(item => 
+      item.id === id ? { ...item, checked: !item.checked } : item
+    ));
+  };
+
+  const renderPrecautions = () => (
+    <div className="citizen-content">
+      <div className="content-header">
+        <h2>🛡️ Flood Safety Guide</h2>
+        <p>Essential precautions and emergency preparedness information</p>
+      </div>
+
+      <div className="precautions-container">
+        {/* Safety Guidelines */}
+        <div className="safety-guidelines">
+          <div className="guideline-card general">
+            <h3>🌟 General Safety Guidelines</h3>
+            <ul>
+              <li>Stay informed using official channels and Pravha alerts</li>
+              <li>Never walk or drive through flood waters</li>
+              <li>Turn off electricity at main breaker if instructed</li>
+              <li>Move valuables and hazardous materials to higher ground</li>
+              <li>Keep emergency kit ready and accessible</li>
+            </ul>
+          </div>
+
+          <div className="guidelines-grid">
+            <div className="guideline-card before">
+              <h4>⚠️ Before Flood</h4>
+              <ul>
+                <li>Prepare emergency kit</li>
+                <li>Create evacuation plan</li>
+                <li>Store drinking water</li>
+                <li>Secure outdoor items</li>
+                <li>Identify nearest shelters</li>
+              </ul>
+            </div>
+
+            <div className="guideline-card during">
+              <h4>🚨 During Flood</h4>
+              <ul>
+                <li>Evacuate if instructed</li>
+                <li>Avoid flood water contact</li>
+                <li>Use battery radio</li>
+                <li>Stay on higher ground</li>
+                <li>Follow official guidance</li>
+              </ul>
+            </div>
+
+            <div className="guideline-card after">
+              <h4>✅ After Flood</h4>
+              <ul>
+                <li>Return only when safe</li>
+                <li>Document damage</li>
+                <li>Disinfect water sources</li>
+                <li>Clean safely</li>
+                <li>Check for hazards</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Emergency Kit Checklist */}
+        <div className="emergency-kit-section">
+          <h3>📦 Emergency Kit Checklist</h3>
+          <p>Check off items as you prepare your emergency kit:</p>
+          
+          <div className="kit-checklist">
+            {emergencyKit.map((item) => (
+              <div key={item.id} className={`kit-item ${item.checked ? 'checked' : ''}`}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    onChange={() => toggleKitItem(item.id)}
+                  />
+                  <span className="checkmark"></span>
+                  <span className="item-label">{item.label}</span>
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <div className="kit-progress">
+            <div className="progress-bar">
+              <div 
+                className="progress-fill"
+                style={{ 
+                  width: `${(emergencyKit.filter(item => item.checked).length / emergencyKit.length) * 100}%` 
+                }}
+              ></div>
+            </div>
+            <p className="progress-text">
+              {emergencyKit.filter(item => item.checked).length} of {emergencyKit.length} items ready
+            </p>
+          </div>
+        </div>
+
+        {/* Emergency Contacts */}
+        <div className="emergency-contacts-section">
+          <h3>📞 Emergency Contacts</h3>
+          <div className="contacts-grid">
+            <div className="contact-card">
+              <div className="contact-icon">🚨</div>
+              <div className="contact-info">
+                <div className="contact-name">National Emergency</div>
+                <div className="contact-number">
+                  <a href="tel:112">112</a>
+                </div>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="contact-icon">🏥</div>
+              <div className="contact-info">
+                <div className="contact-name">Medical Emergency</div>
+                <div className="contact-number">
+                  <a href="tel:108">108</a>
+                </div>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="contact-icon">🚒</div>
+              <div className="contact-info">
+                <div className="contact-name">Fire Department</div>
+                <div className="contact-number">
+                  <a href="tel:101">101</a>
+                </div>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="contact-icon">👮</div>
+              <div className="contact-info">
+                <div className="contact-name">Police</div>
+                <div className="contact-number">
+                  <a href="tel:100">100</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="precautions-actions">
+          <h3>🎯 Quick Actions</h3>
+          <div className="action-buttons">
+            <button 
+              className="action-btn primary"
+              onClick={() => setActiveTab('shelters')}
+            >
+              🏥 Find Nearby Shelters
+            </button>
+            <button 
+              className="action-btn secondary"
+              onClick={() => setActiveTab('alerts')}
+            >
+              🚨 Check Active Alerts
+            </button>
+            <button 
+              className="action-btn info"
+              onClick={() => window.open('https://mausam.imd.gov.in/', '_blank')}
+            >
+              🌦️ Weather Updates
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderSOS = () => (
     <div className="citizen-content">
       <div className="content-header">
@@ -538,6 +735,7 @@ const CitizenPanel = ({ user, onBack }: {
   );
 
   const renderContent = () => {
+    console.log('Current activeTab:', activeTab); // Debug log
     switch (activeTab) {
       case 'dashboard':
         return renderDashboard();
@@ -545,6 +743,9 @@ const CitizenPanel = ({ user, onBack }: {
         return renderAlerts();
       case 'shelters':
         return renderShelters();
+      case 'precautions':
+        console.log('Rendering precautions section'); // Debug log
+        return renderPrecautions();
       case 'sos':
         return renderSOS();
       default:
