@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './CitizenPanel.css';
+import { useTranslation, useTranslatedText } from '../contexts/TranslationContext';
 
 interface LocationData {
   latitude: number;
@@ -44,10 +45,13 @@ const CitizenPanel = ({ user, onBack }: {
   } | null;
   onBack?: () => void;
 }) => {
+  // const { translate } = useTranslation(); // Unused for now
+  const translatedTitle = useTranslatedText('Flood Safety Portal');
+  const translatedSubtitle = useTranslatedText('Citizen Emergency Management System');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  // const [locationError, setLocationError] = useState<string | null>(null); // Unused
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -760,8 +764,8 @@ const CitizenPanel = ({ user, onBack }: {
         <div className="header-content">
           <div className="header-icon">🏠</div>
           <div className="header-text">
-            <h1>Flood Safety Portal</h1>
-            <p>Citizen Emergency Management System</p>
+            <h1>{translatedTitle}</h1>
+            <p>{translatedSubtitle}</p>
           </div>
         </div>
         <div className="header-controls">

@@ -6,11 +6,14 @@ import Signup from './Auth/Signup';
 import AlertSystem from './AlertSystem';
 import GISMapping from './GISMapping';
 import Precautions from './Precautions';
-import Dashboard from './components/Dashboard';
+// import Dashboard from './components/Dashboard'; // Unused
 import SOSSystem from './components/SOSSystem';
 import ShelterFinder from './components/ShelterFinder';
 import AdminPanel from './components/AdminPanel';
 import CitizenPanel from './components/CitizenPanel';
+import LanguageSelector from './components/LanguageSelector';
+import { TranslationProvider } from './contexts/TranslationContext';
+import { getSurvamApiKey } from './config/api';
 
 interface PredictionResponse {
   probability: number;
@@ -346,4 +349,14 @@ function App() {
   );
 }
 
-export default App;
+// Main App wrapper with Translation Provider
+const AppWithTranslation: React.FC = () => {
+  return (
+    <TranslationProvider apiKey={getSurvamApiKey()}>
+      <LanguageSelector />
+      <App />
+    </TranslationProvider>
+  );
+};
+
+export default AppWithTranslation;
