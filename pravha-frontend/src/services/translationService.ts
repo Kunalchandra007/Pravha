@@ -1,4 +1,6 @@
 // Translation service using Survam AI API
+import { STATIC_TRANSLATIONS } from '../utils/translations';
+
 export interface TranslationResponse {
   translatedText: string;
   sourceLanguage: string;
@@ -41,36 +43,6 @@ export class TranslationService {
   ): Promise<TranslationResponse> {
     console.log('TranslationService.translateText called:', { text, targetLanguage, sourceLanguage });
     
-    // Mock translations for demonstration
-    const mockTranslations: { [key: string]: { [key: string]: string } } = {
-      'Flood Safety Portal': {
-        'hi': 'बाढ़ सुरक्षा पोर्टल',
-        'bn': 'বন্যা নিরাপত্তা পোর্টাল',
-        'te': 'వరద భద్రతా పోర్టల్',
-        'ta': 'வெள்ளம் பாதுகாப்பு போர்டல்',
-        'mr': 'पूर सुरक्षा पोर्टल',
-        'gu': 'પૂર સુરક્ષા પોર્ટલ',
-        'kn': 'ವೈಪತ್ತು ಸುರಕ್ಷತೆ ಪೋರ್ಟಲ್',
-        'ml': 'വെള്ളപ്പൊക്ക സുരക്ഷാ പോർട്ടൽ',
-        'pa': 'ਹੜ੍ਹ ਸੁਰੱਖਿਆ ਪੋਰਟਲ',
-        'or': 'ବନ୍ୟା ସୁରକ୍ଷା ପୋର୍ଟାଲ',
-        'as': 'বানপানী সুৰক্ষা পোৰ্টেল'
-      },
-      'Citizen Emergency Management System': {
-        'hi': 'नागरिक आपातकालीन प्रबंधन प्रणाली',
-        'bn': 'নাগরিক জরুরি ব্যবস্থাপনা ব্যবস্থা',
-        'te': 'పౌర అత్యవసర నిర్వహణ వ్యవస్థ',
-        'ta': 'குடிமகன் அவசரகால மேலாண்மை அமைப்பு',
-        'mr': 'नागरिक आणीबाणी व्यवस्थापन प्रणाली',
-        'gu': 'નાગરિક આપત્તિકાળીન વ્યવસ્થાપન સિસ્ટમ',
-        'kn': 'ನಾಗರಿಕ ತುರ್ತು ನಿರ್ವಹಣೆ ವ್ಯವಸ್ಥೆ',
-        'ml': 'പൗര അടിയന്തര നിർവഹണ സിസ്റ്റം',
-        'pa': 'ਨਾਗਰਿਕ ਐਮਰਜੈਂਸੀ ਪ੍ਰਬੰਧਨ ਸਿਸਟਮ',
-        'or': 'ନାଗରିକ ଜରୁରୀକାଳୀନ ପରିଚାଳନା ବ୍ୟବସ୍ଥା',
-        'as': 'নাগৰিক জৰুৰীকালীন ব্যৱস্থাপনা ব্যৱস্থা'
-      }
-    };
-
     // If it's English, return as is
     if (targetLanguage === 'en') {
       return {
@@ -80,21 +52,79 @@ export class TranslationService {
       };
     }
 
-    // Check if we have a mock translation
-    if (mockTranslations[text] && mockTranslations[text][targetLanguage]) {
+    // Check for hardcoded static translations first
+    const staticTranslation = this.getStaticTranslation(text, targetLanguage);
+    if (staticTranslation) {
       return {
-        translatedText: mockTranslations[text][targetLanguage],
+        translatedText: staticTranslation,
         sourceLanguage: sourceLanguage,
         targetLanguage: targetLanguage,
       };
     }
 
-    // For other text, return original for now
-    return {
-      translatedText: text,
-      sourceLanguage: sourceLanguage,
-      targetLanguage: targetLanguage,
-    };
+    // For dynamic content, use API translation
+    try {
+      const response = await fetch('https://api.sarvam.ai/v1/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey,
+        },
+        body: JSON.stringify({
+          input: text,
+          source_language_code: sourceLanguage,
+          target_language_code: targetLanguage,
+          mode: 'formal',
+          model: 'sarvam-translate:v1',
+          numerals_format: 'native',
+          speaker_gender: 'Male',
+          enable_preprocessing: false
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Translation API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const translatedText = data.translated_text || data.output || text;
+      
+      return {
+        translatedText: translatedText,
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+      };
+    } catch (error) {
+      console.error('Translation API error:', error);
+      // Return original text if translation fails
+      return {
+        translatedText: text,
+        sourceLanguage: sourceLanguage,
+        targetLanguage: targetLanguage,
+      };
+    }
+  }
+
+  private getStaticTranslation(text: string, targetLanguage: string): string | null {
+    // Check all static translation categories
+    const categories = ['landing', 'login', 'common'];
+    
+    for (const category of categories) {
+      const categoryTranslations = (STATIC_TRANSLATIONS as any)[category];
+      if (categoryTranslations) {
+        for (const key in categoryTranslations) {
+          const translations = categoryTranslations[key];
+          if (translations && translations[targetLanguage]) {
+            // Check if any translation matches our text
+            if (translations['en'] === text) {
+              return translations[targetLanguage];
+            }
+          }
+        }
+      }
+    }
+    
+    return null;
   }
 
   async translateMultipleTexts(
