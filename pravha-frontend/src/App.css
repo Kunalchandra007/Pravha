@@ -62,6 +62,61 @@ input[type="range"]::-moz-range-thumb:hover {
   transition: all 0.2s ease;
 }
 
+/* Language Selector Styles */
+.language-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  min-width: 120px;
+}
+
+.language-icon {
+  font-size: 16px;
+  color: #3b82f6;
+}
+
+.language-select {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 100px;
+  border: none;
+  outline: none;
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.language-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.translation-loading {
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+  margin-left: 8px;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

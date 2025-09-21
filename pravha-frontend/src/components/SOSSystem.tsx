@@ -129,14 +129,17 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
       const sosRequest = {
         location: currentLocation,
         message: sosMessage,
-        emergencyType: emergencyType
+        emergencyType: emergencyType,
+        user_id: user.id
       };
 
       // Send to the backend
-      const response = await fetch('http://localhost:8002/sos/request', {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8002/sos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...sosRequest,
