@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LandingPage.css';
+import { useTranslation } from './contexts/TranslationContext';
+import { getTranslatedText } from './utils/translations';
 
 interface LandingPageProps {
   onLogin: () => void;
@@ -7,6 +9,7 @@ interface LandingPageProps {
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
+  const { currentLanguage } = useTranslation();
   const [currentFeature, setCurrentFeature] = useState(0);
   const [stats, setStats] = useState({
     livesSaved: 0,
@@ -19,7 +22,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
     {
       icon: '🤖',
       title: 'AI-Powered Prediction',
-      description: 'Advanced machine learning models predict flood risks with 85% accuracy up to 48 hours in advance',
+      description: 'Advanced machine learning models predict flood risks with 86.5% accuracy up to 48 hours in advance',
       color: '#3B82F6'
     },
     {
@@ -47,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
   useEffect(() => {
     // Animate stats on load
     const animateStats = () => {
-      const targets = { livesSaved: 12500, alertsSent: 45000, coverage: 95, accuracy: 85 };
+      const targets = { livesSaved: 12500, alertsSent: 45000, coverage: 95, accuracy: 86.5 };
       const duration = 2000;
       const steps = 60;
       const stepDuration = duration / steps;
@@ -79,7 +82,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
     }, 4000);
 
     return () => clearInterval(featureTimer);
-  }, []);
+  }, [features.length]);
 
   return (
     <div className="landing-page">
@@ -96,36 +99,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
         <div className="hero-content">
           <div className="hero-text">
             <h1 className="hero-title">
-              <span className="title-main">Pravha</span>
-              <span className="title-sub">Flood Management System</span>
+              <span className="title-main">{getTranslatedText('landing', 'title', currentLanguage)}</span>
+              <span className="title-sub">{getTranslatedText('landing', 'subtitle', currentLanguage)}</span>
             </h1>
             <p className="hero-description">
-              AI-powered flood forecasting and emergency response system that predicts, monitors, 
-              and coordinates responses to flooding events, saving lives through early warning 
-              and efficient response coordination.
+              {getTranslatedText('landing', 'description', currentLanguage)}
             </p>
             <div className="hero-buttons">
               <button className="btn-primary" onClick={onSignup}>
-                <span className="btn-icon">🚀</span>
-                Get Started Free
+                {getTranslatedText('landing', 'getStarted', currentLanguage)}
               </button>
               <button className="btn-secondary" onClick={onLogin}>
-                <span className="btn-icon">🔐</span>
-                Sign In
+                {getTranslatedText('landing', 'signIn', currentLanguage)}
               </button>
             </div>
             <div className="hero-stats">
               <div className="stat-item">
                 <div className="stat-number">{stats.livesSaved.toLocaleString()}+</div>
-                <div className="stat-label">Lives Saved</div>
+                <div className="stat-label">{getTranslatedText('landing', 'livesSaved', currentLanguage)}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-number">{stats.coverage}%</div>
-                <div className="stat-label">Area Coverage</div>
+                <div className="stat-label">{getTranslatedText('landing', 'areaCoverage', currentLanguage)}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-number">{stats.accuracy}%</div>
-                <div className="stat-label">Prediction Accuracy</div>
+                <div className="stat-label">{getTranslatedText('landing', 'predictionAccuracy', currentLanguage)}</div>
               </div>
             </div>
           </div>
@@ -150,27 +149,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                 <div className="preview-alerts">
                   <div className="alerts-scroll">
                     <div className="alert-item alert-high">
-                      <span className="alert-icon">🚨</span>
                       <span className="alert-text">High Risk Zone Detected</span>
                     </div>
                     <div className="alert-item alert-moderate">
-                      <span className="alert-icon">⚠️</span>
                       <span className="alert-text">Moderate Risk Alert</span>
                     </div>
                     <div className="alert-item alert-low">
-                      <span className="alert-icon">✅</span>
                       <span className="alert-text">Area Clear - No Risk</span>
                     </div>
                     <div className="alert-item alert-info">
-                      <span className="alert-icon">ℹ️</span>
                       <span className="alert-text">Weather Update Available</span>
                     </div>
                     <div className="alert-item alert-high">
-                      <span className="alert-icon">🌊</span>
                       <span className="alert-text">Water Level Rising</span>
                     </div>
                     <div className="alert-item alert-moderate">
-                      <span className="alert-icon">🌧️</span>
                       <span className="alert-text">Heavy Rainfall Expected</span>
                     </div>
                   </div>
@@ -256,36 +249,276 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
 
 
 
-      {/* CTA Section */}
-      <section className="cta-section">
+      {/* Benefits Section */}
+      <section className="benefits-section">
         <div className="container">
-          <div className="cta-content">
-            <h2 className="cta-title">Ready to Protect Your Community?</h2>
-            <p className="cta-description">
-              Join thousands of users who trust Pravha for comprehensive flood management
+          <div className="section-header">
+            <h2 className="section-title">PRAVHA Impact & Benefits</h2>
+            <p className="section-subtitle">
+              Comprehensive analysis of economic and social benefits through AI-driven flood management
             </p>
-            <div className="cta-buttons">
-              <button className="btn-primary btn-large" onClick={onSignup}>
-                <span className="btn-icon">🚀</span>
-                Start Free Trial
-              </button>
-              <button className="btn-outline btn-large" onClick={onLogin}>
-                <span className="btn-icon">🔐</span>
-                Sign In
-              </button>
+          </div>
+          
+          <div className="benefits-grid">
+            {/* Impact Analysis */}
+            <div className="benefit-card impact-analysis">
+              <div className="benefit-header">
+                <h3>Project Impact & ROI Analysis</h3>
+                <p>Estimated Annual Economic & Social Benefits</p>
+              </div>
+              <div className="benefit-content">
+                <div className="impact-flowchart">
+                  <div className="flowchart-title">Impact Distribution Flow</div>
+                  <div className="flowchart-container">
+                    <div className="flow-start">
+                      <div className="flow-node start-node">
+                        <div className="node-title">PRAVHA System</div>
+                        <div className="node-subtitle">AI-Powered Flood Management</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flow-arrows">
+                      <div className="arrow-down"></div>
+                    </div>
+                    
+                    <div className="flow-categories">
+                      <div className="impact-category economic">
+                        <div className="category-header">Economic Prevention</div>
+                        <div className="category-impact">40%</div>
+                        <div className="category-value">₹10,500 crore</div>
+                        <div className="category-description">
+                          Proactive damage prevention through early warning systems and infrastructure protection
+                        </div>
+                        <ul className="category-benefits">
+                          <li>Property damage reduction</li>
+                          <li>Agricultural loss prevention</li>
+                          <li>Infrastructure protection</li>
+                          <li>Business continuity savings</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="impact-category lifesaving">
+                        <div className="category-header">Life-Saving Impact</div>
+                        <div className="category-impact">35%</div>
+                        <div className="category-value">₹9,187 crore</div>
+                        <div className="category-description">
+                          Direct human life preservation through timely alerts and emergency response coordination
+                        </div>
+                        <ul className="category-benefits">
+                          <li>960-1,280 lives saved annually</li>
+                          <li>Reduced medical emergency costs</li>
+                          <li>Prevented injury treatment costs</li>
+                          <li>Family economic security</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="impact-category efficiency">
+                        <div className="category-header">Response Efficiency</div>
+                        <div className="category-impact">15%</div>
+                        <div className="category-value">₹3,937 crore</div>
+                        <div className="category-description">
+                          Streamlined emergency operations through AI-driven resource allocation and coordination
+                        </div>
+                        <ul className="category-benefits">
+                          <li>95% faster alert generation</li>
+                          <li>60% better resource coordination</li>
+                          <li>Optimized emergency management</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="impact-category communication">
+                        <div className="category-header">Communication Enhancement</div>
+                        <div className="category-impact">10%</div>
+                        <div className="category-value">₹2,625 crore</div>
+                        <div className="category-description">
+                          Inclusive communication through multi-language support and mesh network connectivity
+                        </div>
+                        <ul className="category-benefits">
+                          <li>95% population coverage via 12 languages</li>
+                          <li>100% connectivity via mesh network</li>
+                          <li>Eliminated communication disruption</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <div className="flow-arrows">
+                      <div className="arrow-down"></div>
+                    </div>
+                    
+                    <div className="flow-end">
+                      <div className="flow-node end-node">
+                        <div className="node-title">Total Impact</div>
+                        <div className="node-value">₹26,250 crore</div>
+                        <div className="node-subtitle">Annual Economic & Social Benefits</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="cta-features">
-              <div className="cta-feature">
-                <span className="cta-feature-icon">✅</span>
-                <span>Free for citizens</span>
+
+            {/* Cost-Benefit Analysis */}
+            <div className="benefit-card cost-benefit">
+              <div className="benefit-header">
+                <h3>Cost-Benefit Analysis</h3>
+                <p>High ROI for Disaster Resilience</p>
               </div>
-              <div className="cta-feature">
-                <span className="cta-feature-icon">✅</span>
-                <span>No setup required</span>
+              <div className="benefit-content">
+                <div className="roi-flowchart">
+                  <div className="flowchart-title">ROI Calculation Flow</div>
+                  <div className="roi-flowchart-container">
+                    <div className="roi-input-section">
+                      <div className="roi-node input-node">
+                        <div className="node-title">Investment</div>
+                        <div className="node-value">₹550 crore</div>
+                        <div className="node-subtitle">Total Implementation Cost</div>
+                        <div className="node-breakdown">
+                          <div className="breakdown-item">
+                            <span className="breakdown-label">Implementation:</span>
+                            <span className="breakdown-value">₹500 crore (one-time)</span>
+                          </div>
+                          <div className="breakdown-item">
+                            <span className="breakdown-label">Annual Operations:</span>
+                            <span className="breakdown-value">₹50 crore</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="roi-arrow">
+                      <div className="arrow-right"></div>
+                      <div className="arrow-label">Generates</div>
+                    </div>
+                    
+                    <div className="roi-output-section">
+                      <div className="roi-node output-node">
+                        <div className="node-title">Annual Benefits</div>
+                        <div className="node-value">₹26,250 crore</div>
+                        <div className="node-subtitle">Economic & Social Value</div>
+                        <div className="benefit-breakdown">
+                          <div className="benefit-item">
+                            <span className="benefit-label">Direct Economic Savings:</span>
+                            <span className="benefit-value">₹15,000 crore</span>
+                          </div>
+                          <div className="benefit-item">
+                            <span className="benefit-label">Life Preservation Value:</span>
+                            <span className="benefit-value">₹9,187 crore</span>
+                          </div>
+                          <div className="benefit-item">
+                            <span className="benefit-label">Efficiency Improvements:</span>
+                            <span className="benefit-value">₹2,063 crore</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="roi-arrow">
+                      <div className="arrow-right"></div>
+                      <div className="arrow-label">Results in</div>
+                    </div>
+                    
+                    <div className="roi-result-section">
+                      <div className="roi-node result-node">
+                        <div className="node-title">Net Annual Benefit</div>
+                        <div className="node-value">₹25,700 crore</div>
+                        <div className="node-subtitle">After Deducting Annual Costs</div>
+                      </div>
+                    </div>
+                    
+                    <div className="roi-arrow">
+                      <div className="arrow-right"></div>
+                      <div className="arrow-label">ROI</div>
+                    </div>
+                    
+                    <div className="roi-final-section">
+                      <div className="roi-node final-node">
+                        <div className="node-title">Return on Investment</div>
+                        <div className="node-value">47.7X</div>
+                        <div className="node-subtitle">Every ₹1 invested returns ₹47.7</div>
+                        <div className="roi-explanation">
+                          Exceptional ROI demonstrating the high value of proactive disaster management
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="cta-feature">
-                <span className="cta-feature-icon">✅</span>
-                <span>24/7 monitoring</span>
+            </div>
+
+            {/* Lives & Economy Impact */}
+            <div className="benefit-card lives-economy">
+              <div className="benefit-header">
+                <h3>Lives & Economy Impact</h3>
+                <p>Estimated Reduction in Casualties & Damage</p>
+              </div>
+              <div className="benefit-content">
+                <div className="impact-flowchart">
+                  <div className="flowchart-title">Before vs After PRAVHA Implementation</div>
+                  <div className="comparison-flowchart">
+                    <div className="before-section">
+                      <div className="section-title">Before PRAVHA</div>
+                      <div className="before-metrics">
+                        <div className="metric-card before-lives">
+                          <div className="metric-title">Annual Flood Casualties</div>
+                          <div className="metric-value">1,600 lives</div>
+                          <div className="metric-description">Average annual flood-related deaths</div>
+                        </div>
+                        <div className="metric-card before-economy">
+                          <div className="metric-title">Economic Damage</div>
+                          <div className="metric-value">₹65,625 crore</div>
+                          <div className="metric-description">Annual flood-related economic losses</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="arrow-section">
+                      <div className="arrow-right-large"></div>
+                      <div className="arrow-label">PRAVHA Implementation</div>
+                    </div>
+                    
+                    <div className="after-section">
+                      <div className="section-title">After PRAVHA</div>
+                      <div className="after-metrics">
+                        <div className="metric-card after-lives">
+                          <div className="metric-title">Lives Saved</div>
+                          <div className="metric-value">70% Reduction</div>
+                          <div className="metric-description">960-1,280 lives saved annually</div>
+                          <div className="remaining-impact">
+                            <div className="remaining-label">Remaining Casualties:</div>
+                            <div className="remaining-value">320-640 lives (30%)</div>
+                          </div>
+                        </div>
+                        <div className="metric-card after-economy">
+                          <div className="metric-title">Economic Savings</div>
+                          <div className="metric-value">60% Reduction</div>
+                          <div className="metric-description">₹26,250 crore saved annually</div>
+                          <div className="remaining-impact">
+                            <div className="remaining-label">Remaining Impact:</div>
+                            <div className="remaining-value">₹21,000 crore (40%)</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="impact-summary">
+                    <div className="summary-title">Total Annual Impact</div>
+                    <div className="summary-content">
+                      <div className="summary-item">
+                        <span className="summary-label">Lives Saved:</span>
+                        <span className="summary-value">960-1,280 lives</span>
+                      </div>
+                      <div className="summary-item">
+                        <span className="summary-label">Economic Savings:</span>
+                        <span className="summary-value">₹26,250 crore</span>
+                      </div>
+                      <div className="summary-item">
+                        <span className="summary-label">Combined Value:</span>
+                        <span className="summary-value">Priceless human life + ₹26,250 crore</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -298,7 +531,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
           <div className="footer-content">
             <div className="footer-brand">
               <div className="footer-logo">
-                <span className="logo-icon">🌊</span>
                 <span className="logo-text">Pravha</span>
               </div>
               <p className="footer-description">
@@ -306,44 +538,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
                 efficient emergency response coordination.
               </p>
             </div>
-            <div className="footer-links">
-              <div className="footer-column">
-                <h4 className="footer-title">Product</h4>
-                <ul className="footer-list">
-                  <li><a href="#features">Features</a></li>
-                  <li><a href="#pricing">Pricing</a></li>
-                  <li><a href="#api">API</a></li>
-                  <li><a href="#docs">Documentation</a></li>
-                </ul>
-              </div>
-              <div className="footer-column">
-                <h4 className="footer-title">Support</h4>
-                <ul className="footer-list">
-                  <li><a href="#help">Help Center</a></li>
-                  <li><a href="#contact">Contact Us</a></li>
-                  <li><a href="#status">System Status</a></li>
-                  <li><a href="#emergency">Emergency</a></li>
-                </ul>
-              </div>
-              <div className="footer-column">
-                <h4 className="footer-title">Company</h4>
-                <ul className="footer-list">
-                  <li><a href="#about">About</a></li>
-                  <li><a href="#careers">Careers</a></li>
-                  <li><a href="#privacy">Privacy</a></li>
-                  <li><a href="#terms">Terms</a></li>
-                </ul>
-              </div>
-            </div>
           </div>
           <div className="footer-bottom">
             <p className="footer-copyright">
               © 2024 Pravha Flood Management System. All rights reserved.
             </p>
             <div className="footer-social">
-              <a href="#twitter" className="social-link">🐦</a>
-              <a href="#linkedin" className="social-link">💼</a>
-              <a href="#github" className="social-link">💻</a>
+              <span className="made-by">Made by Cyberknights</span>
             </div>
           </div>
         </div>

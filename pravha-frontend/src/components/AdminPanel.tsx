@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './AdminPanel.css';
+import { useTranslation } from '../contexts/TranslationContext';
+import { getTranslatedText } from '../utils/translations';
 
 interface AdminStats {
   totalUsers: number;
@@ -73,6 +75,7 @@ const AdminPanel = ({ user, onBack }: {
   } | null;
   onBack?: () => void;
 }) => {
+  const { currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -620,42 +623,42 @@ const AdminPanel = ({ user, onBack }: {
           onClick={() => setActiveTab('overview')}
         >
           <span className="nav-icon">📊</span>
-          <span>Overview</span>
+          <span>{getTranslatedText('common', 'overview', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'sos' ? 'active' : ''}`}
           onClick={() => setActiveTab('sos')}
         >
           <span className="nav-icon">🆘</span>
-          <span>SOS Management</span>
+          <span>{getTranslatedText('common', 'sos', currentLanguage)} {getTranslatedText('common', 'management', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`}
           onClick={() => setActiveTab('alerts')}
         >
           <span className="nav-icon">🚨</span>
-          <span>Alert Management</span>
+          <span>{getTranslatedText('common', 'alerts', currentLanguage)} {getTranslatedText('common', 'management', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'shelters' ? 'active' : ''}`}
           onClick={() => setActiveTab('shelters')}
         >
           <span className="nav-icon">🏥</span>
-          <span>Shelter Management</span>
+          <span>{getTranslatedText('common', 'shelters', currentLanguage)} {getTranslatedText('common', 'management', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'prediction' ? 'active' : ''}`}
           onClick={() => setActiveTab('prediction')}
         >
           <span className="nav-icon">🤖</span>
-          <span>AI Prediction</span>
+          <span>AI {getTranslatedText('common', 'prediction', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'gis' ? 'active' : ''}`}
           onClick={() => setActiveTab('gis')}
         >
           <span className="nav-icon">🗺️</span>
-          <span>GIS Mapping</span>
+          <span>{getTranslatedText('common', 'gis', currentLanguage)}</span>
         </button>
       </nav>
 
@@ -798,15 +801,15 @@ const AdminPanel = ({ user, onBack }: {
           </button>
           <button className="nav-btn secondary" onClick={() => setActiveTab('alerts')}>
             <span className="nav-icon">🚨</span>
-            <span>Alert Management</span>
+            <span>{getTranslatedText('common', 'alerts', currentLanguage)} {getTranslatedText('common', 'management', currentLanguage)}</span>
           </button>
           <button className="nav-btn warning" onClick={() => setActiveTab('shelters')}>
             <span className="nav-icon">🏥</span>
-            <span>Shelter Management</span>
+            <span>{getTranslatedText('common', 'shelters', currentLanguage)} {getTranslatedText('common', 'management', currentLanguage)}</span>
           </button>
           <button className="nav-btn info" onClick={() => setActiveTab('prediction')}>
             <span className="nav-icon">🤖</span>
-            <span>AI Prediction</span>
+            <span>AI {getTranslatedText('common', 'prediction', currentLanguage)}</span>
           </button>
         </div>
       </div>

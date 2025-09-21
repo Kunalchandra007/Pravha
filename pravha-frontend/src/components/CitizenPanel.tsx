@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './CitizenPanel.css';
-import { useTranslation, useTranslatedText } from '../contexts/TranslationContext';
+import { useTranslation } from '../contexts/TranslationContext';
+import { getTranslatedText } from '../utils/translations';
 
 interface LocationData {
   latitude: number;
@@ -45,9 +46,7 @@ const CitizenPanel = ({ user, onBack }: {
   } | null;
   onBack?: () => void;
 }) => {
-  // const { translate } = useTranslation(); // Unused for now
-  const translatedTitle = useTranslatedText('Flood Safety Portal');
-  const translatedSubtitle = useTranslatedText('Citizen Emergency Management System');
+  const { currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -70,8 +69,8 @@ const CitizenPanel = ({ user, onBack }: {
     { id: 'hygiene', label: 'Hygiene items & sanitizer', checked: false },
   ]);
 
-  // Hardcoded shelters for demo
-  const hardcodedShelters: Shelter[] = [
+  // Hardcoded shelters for demo - memoized to prevent re-renders
+  const hardcodedShelters: Shelter[] = useMemo(() => [
     {
       id: '1',
       name: 'Central Community Center',
@@ -137,7 +136,7 @@ const CitizenPanel = ({ user, onBack }: {
       status: 'full',
       distance: 1.8
     }
-  ];
+  ], []);
 
   useEffect(() => {
     setShelters(hardcodedShelters);
@@ -146,7 +145,7 @@ const CitizenPanel = ({ user, onBack }: {
       fetchAlerts();
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [hardcodedShelters]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -174,10 +173,9 @@ const CitizenPanel = ({ user, onBack }: {
 
   const getCurrentLocation = async () => {
     setLocationLoading(true);
-    setLocationError(null);
 
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by this browser');
+      console.error('Geolocation is not supported by this browser');
       setLocationLoading(false);
       return;
     }
@@ -194,7 +192,7 @@ const CitizenPanel = ({ user, onBack }: {
         setLocationLoading(false);
       },
       (error: GeolocationPositionError) => {
-        setLocationError(`Location error: ${error.message}`);
+        console.error(`Location error: ${error.message}`);
         setLocationLoading(false);
       },
       {
@@ -270,21 +268,21 @@ const CitizenPanel = ({ user, onBack }: {
           onClick={() => setActiveTab('dashboard')}
         >
           <span className="nav-icon">🏠</span>
-          <span>Dashboard</span>
+          <span>{getTranslatedText('common', 'dashboard', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`}
           onClick={() => setActiveTab('alerts')}
         >
           <span className="nav-icon">🚨</span>
-          <span>Active Alerts</span>
+          <span>Active {getTranslatedText('common', 'alerts', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'shelters' ? 'active' : ''}`}
           onClick={() => setActiveTab('shelters')}
         >
           <span className="nav-icon">🏥</span>
-          <span>Find Shelters</span>
+          <span>Find {getTranslatedText('common', 'shelters', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'precautions' ? 'active' : ''}`}
@@ -301,7 +299,7 @@ const CitizenPanel = ({ user, onBack }: {
           onClick={() => setActiveTab('sos')}
         >
           <span className="nav-icon">🆘</span>
-          <span>Emergency SOS</span>
+          <span>Emergency {getTranslatedText('common', 'sos', currentLanguage)}</span>
         </button>
       </nav>
 
@@ -764,8 +762,8 @@ const CitizenPanel = ({ user, onBack }: {
         <div className="header-content">
           <div className="header-icon">🏠</div>
           <div className="header-text">
-            <h1>{translatedTitle}</h1>
-            <p>{translatedSubtitle}</p>
+            <h1>Flood Safety Portal</h1>
+            <p>Citizen Emergency Management System</p>
           </div>
         </div>
         <div className="header-controls">

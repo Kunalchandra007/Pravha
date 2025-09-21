@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './Auth.css';
+import { useTranslation } from '../contexts/TranslationContext';
+import { getTranslatedText } from '../utils/translations';
 
 interface LoginProps {
   onLogin: (user: any) => void;
@@ -8,6 +10,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLanding }) => {
+  const { currentLanguage } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -71,18 +74,18 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
             className="back-button"
             onClick={onBackToLanding}
           >
-            ← Back to Home
+            {getTranslatedText('login', 'backToHome', currentLanguage)}
           </button>
           <div className="auth-logo">
             <span className="logo-icon">🌊</span>
-            <span className="logo-text">Pravha</span>
+            <span className="logo-text">{getTranslatedText('landing', 'title', currentLanguage)}</span>
           </div>
         </div>
 
         <div className="auth-card">
           <div className="auth-card-header">
-            <h1 className="auth-title">Welcome Back</h1>
-            <p className="auth-subtitle">Sign in to your Pravha account</p>
+            <h1 className="auth-title">{getTranslatedText('login', 'welcomeBack', currentLanguage)}</h1>
+            <p className="auth-subtitle">{getTranslatedText('login', 'signInToAccount', currentLanguage)}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -94,7 +97,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
             )}
 
             <div className="form-group">
-              <label htmlFor="email" className="form-label">Email Address</label>
+              <label htmlFor="email" className="form-label">{getTranslatedText('login', 'emailAddress', currentLanguage)}</label>
               <input
                 type="email"
                 id="email"
@@ -102,13 +105,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
                 value={formData.email}
                 onChange={handleInputChange}
                 className="form-input"
-                placeholder="Enter your email"
+                placeholder={getTranslatedText('login', 'enterEmail', currentLanguage)}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="password" className="form-label">Password</label>
+              <label htmlFor="password" className="form-label">{getTranslatedText('login', 'password', currentLanguage)}</label>
               <div className="password-input-container">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -117,7 +120,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
                   value={formData.password}
                   onChange={handleInputChange}
                   className="form-input"
-                  placeholder="Enter your password"
+                  placeholder={getTranslatedText('login', 'enterPassword', currentLanguage)}
                   required
                 />
                 <button
@@ -131,7 +134,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
             </div>
 
             <div className="form-group">
-              <label htmlFor="role" className="form-label">Account Type</label>
+              <label htmlFor="role" className="form-label">{getTranslatedText('login', 'accountType', currentLanguage)}</label>
               <select
                 id="role"
                 name="role"
@@ -149,9 +152,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
               <label className="checkbox-container">
                 <input type="checkbox" />
                 <span className="checkmark"></span>
-                Remember me
+                {getTranslatedText('login', 'rememberMe', currentLanguage)}
               </label>
-              <a href="#forgot" className="forgot-link">Forgot password?</a>
+              <a href="#forgot" className="forgot-link">{getTranslatedText('login', 'forgotPassword', currentLanguage)}</a>
             </div>
 
             <button
@@ -167,7 +170,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
               ) : (
                 <>
                   <span className="button-icon">🔐</span>
-                  Sign In
+                  {getTranslatedText('login', 'signInButton', currentLanguage)}
                 </>
               )}
             </button>
@@ -177,13 +180,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
 
           <div className="auth-footer">
             <p>
-              Don't have an account?{' '}
-              <button 
-                className="switch-link"
-                onClick={onSwitchToSignup}
-              >
-                Sign up here
-              </button>
+              {getTranslatedText('login', 'noAccount', currentLanguage)}
             </p>
           </div>
         </div>
@@ -191,15 +188,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
         <div className="auth-features">
           <div className="feature-item">
             <span className="feature-icon">🛡️</span>
-            <span>Secure & Encrypted</span>
+            <span>{getTranslatedText('common', 'secure', currentLanguage)}</span>
           </div>
           <div className="feature-item">
             <span className="feature-icon">⚡</span>
-            <span>Fast & Reliable</span>
+            <span>{getTranslatedText('common', 'fastReliable', currentLanguage)}</span>
           </div>
           <div className="feature-item">
             <span className="feature-icon">🌍</span>
-            <span>24/7 Monitoring</span>
+            <span>{getTranslatedText('common', 'monitoring', currentLanguage)}</span>
           </div>
         </div>
       </div>
