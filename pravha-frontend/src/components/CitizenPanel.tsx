@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './CitizenPanel.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
+import CitizenGIS from './CitizenGIS';
 
 interface LocationData {
   latitude: number;
@@ -319,6 +320,13 @@ const CitizenPanel = ({ user, onBack }: {
         >
           <span className="nav-icon">🛡️</span>
           <span>Safety Guide</span>
+        </button>
+        <button
+          className={`nav-item ${activeTab === 'gis' ? 'active' : ''}`}
+          onClick={() => setActiveTab('gis')}
+        >
+          <span className="nav-icon">🗺️</span>
+          <span>GIS Map</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'sos' ? 'active' : ''}`}
@@ -774,6 +782,8 @@ const CitizenPanel = ({ user, onBack }: {
       case 'precautions':
         console.log('Rendering precautions section'); // Debug log
         return renderPrecautions();
+      case 'gis':
+        return user ? <CitizenGIS user={user} onBack={() => setActiveTab('dashboard')} /> : <div>Please log in to access GIS</div>;
       case 'sos':
         return renderSOS();
       default:

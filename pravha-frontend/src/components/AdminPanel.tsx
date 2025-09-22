@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './AdminPanel.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
+import AdminGIS from './AdminGIS';
 
 interface AdminStats {
   totalUsers: number;
@@ -1799,7 +1800,7 @@ const AdminPanel = ({ user, onBack }: {
       case 'prediction':
         return renderPredictionAnalysis();
       case 'gis':
-        return renderAdminGIS();
+        return user ? <AdminGIS user={user} onBack={() => setActiveTab('dashboard')} /> : <div>Please log in to access GIS</div>;
       default:
         return (
           <div className="admin-content">
