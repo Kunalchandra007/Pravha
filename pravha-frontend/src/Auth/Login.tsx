@@ -180,7 +180,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
 
           <div className="auth-footer">
             <p>
-              {getTranslatedText('login', 'noAccount', currentLanguage)}
+              Don't have an account?{' '}
+              <button 
+                className="switch-link"
+                onClick={onSwitchToSignup}
+              >
+                Sign up here
+              </button>
             </p>
           </div>
         </div>
