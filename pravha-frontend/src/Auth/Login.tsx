@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Auth.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
+import { TokenManager } from '../utils/tokenManager';
 
 interface LoginProps {
   onLogin: (user: any) => void;
@@ -36,9 +37,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
 
       if (response.ok) {
         const tokenData = await response.json();
-        // Store token in localStorage
-        localStorage.setItem('auth_token', tokenData.access_token);
-        localStorage.setItem('user_data', JSON.stringify(tokenData.user));
+        // Store tokens using TokenManager
+        TokenManager.setTokens(
+          tokenData.access_token,
+          tokenData.refresh_token,
+          tokenData.user,
+          tokenData.expires_in
+        );
         
         onLogin(tokenData.user);
       } else {
