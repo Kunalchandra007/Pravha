@@ -98,6 +98,7 @@ const AdminPanel = ({ user, onBack }: {
   const [currentAlerts, setCurrentAlerts] = useState<any[]>([]);
   const [currentSOS, setCurrentSOS] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [sosUpdating, setSosUpdating] = useState<string | null>(null);
 
   // GIS states
   const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
@@ -583,7 +584,10 @@ const AdminPanel = ({ user, onBack }: {
 
   const handleUpdateSOSRequest = async (sosId: string, updateData: any) => {
     try {
+      setSosUpdating(sosId);
       const token = localStorage.getItem('auth_token');
+
+      console.log('Updating SOS request:', sosId, updateData);
 
       const response = await fetch(`http://localhost:8002/admin/sos-requests/${sosId}`, {
         method: 'PUT',
@@ -595,15 +599,32 @@ const AdminPanel = ({ user, onBack }: {
       });
 
       if (response.ok) {
-        alert('SOS request updated successfully!');
-        fetchCurrentAlertsAndSOS(); // Refresh data
+        const result = await response.json();
+        console.log('SOS request updated successfully:', result);
+        
+        // Show appropriate success message based on status
+        if (updateData.status === 'RESOLVED') {
+          alert('✅ SOS request marked as resolved and removed from pending list!');
+        } else if (updateData.status === 'IN_PROGRESS') {
+          alert('🚑 SOS request marked as in progress!');
+        } else if (updateData.status === 'ASSIGNED') {
+          alert('👥 Emergency team dispatched to location!');
+        } else {
+          alert('SOS request updated successfully!');
+        }
+        
+        // Refresh data immediately
+        await fetchCurrentAlertsAndSOS();
       } else {
         const error = await response.json();
+        console.error('Failed to update SOS request:', error);
         alert(`Failed to update SOS request: ${error.detail}`);
       }
     } catch (error) {
       console.error('Error updating SOS request:', error);
       alert('Error updating SOS request');
+    } finally {
+      setSosUpdating(null);
     }
   };
 
@@ -1341,7 +1362,15 @@ const AdminPanel = ({ user, onBack }: {
                     </button>
                     <button
                       className="sos-action-btn resolve"
-                      onClick={() => handleUpdateSOSRequest(sos.id, { status: 'RESOLVED', resolution_notes: 'Emergency resolved successfully' })}
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to mark this SOS request as resolved? This will remove it from the pending list.')) {
+                          handleUpdateSOSRequest(sos.id, { 
+                            status: 'RESOLVED', 
+                            resolution_notes: 'Emergency resolved successfully',
+                            resolved_at: new Date().toISOString()
+                          });
+                        }
+                      }}
                     >
                       ✅ Mark Resolved
                     </button>

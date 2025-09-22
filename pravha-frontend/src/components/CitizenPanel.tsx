@@ -206,9 +206,32 @@ const CitizenPanel = ({ user, onBack }: {
   const sendSOSRequest = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+      
+      if (!token || !userData.id) {
+        alert('Please log in to send SOS request');
+        return;
+      }
+
+      // Get current location first if not available
+      if (!currentLocation) {
+        await getCurrentLocation();
+        // Wait a moment for location to be set
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
       const location = currentLocation 
         ? [currentLocation.latitude, currentLocation.longitude]
         : [28.6139, 77.2090]; // Default Delhi location
+
+      const sosData = {
+        location: location,
+        emergency_type: 'FLOOD_EMERGENCY',
+        message: 'Emergency assistance needed due to flooding',
+        user_id: userData.id
+      };
+
+      console.log('Sending SOS request:', sosData);
 
       const response = await fetch('http://localhost:8002/sos', {
         method: 'POST',
@@ -216,21 +239,24 @@ const CitizenPanel = ({ user, onBack }: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          location: location,
-          emergency_type: 'FLOOD_EMERGENCY',
-          message: 'Emergency assistance needed due to flooding'
-        }),
+        body: JSON.stringify(sosData),
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('SOS request sent successfully:', result);
         alert('SOS request sent successfully! Emergency services have been notified.');
+        
+        // Refresh the page to show updated data
+        window.location.reload();
       } else {
-        alert('Failed to send SOS request. Please try again.');
+        const error = await response.json();
+        console.error('SOS request failed:', error);
+        alert(`Failed to send SOS request: ${error.detail || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error sending SOS:', error);
-      alert('Error sending SOS request');
+      alert('Error sending SOS request. Please check your connection and try again.');
     }
   };
 
