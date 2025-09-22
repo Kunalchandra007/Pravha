@@ -162,6 +162,7 @@ input[type="range"]::-moz-range-thumb:hover {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+  color: #1f2937;
 }
 
 .header-text p {

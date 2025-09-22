@@ -215,8 +215,8 @@
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
   font-weight: 700;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #1f2937;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .content-header p {

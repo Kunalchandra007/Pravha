@@ -814,6 +814,7 @@
 .access-denied h2 {
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
+  color: #1f2937;
 }
 
 .access-denied p {
@@ -850,6 +851,7 @@
 .loading-container h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
+  color: #1f2937;
 }
 
 .loading-container p {
