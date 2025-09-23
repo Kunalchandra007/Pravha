@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -64,6 +64,15 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [selectedSOS, setSelectedSOS] = useState<SOSRequest | null>(null);
+
+  // Sort SOS requests by latest timestamp (newest first)
+  const sortedSOSRequests = useMemo(() => {
+    return [...sosRequests].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return timeB - timeA; // Newest first
+    });
+  }, [sosRequests]);
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [showAddShelter, setShowAddShelter] = useState(false);
   const [newShelter, setNewShelter] = useState({
@@ -81,6 +90,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
   const [mapReady, setMapReady] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [forceMapUpdate, setForceMapUpdate] = useState(false);
+  
 
   // Generate random coordinates around Delhi for demo purposes
   const generateRandomCoordinates = (baseLat: number = 28.6139, baseLng: number = 77.2090, radius: number = 0.1) => {
@@ -386,17 +396,44 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
     const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
     
     if (diffInSeconds < 60) {
-      return `${diffInSeconds} seconds ago`;
+      return `${diffInSeconds}s ago`;
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      return `${minutes}m ago`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      return `${hours}h ago`;
     } else {
       const days = Math.floor(diffInSeconds / 86400);
-      return `${days} day${days > 1 ? 's' : ''} ago`;
+      return `${days}d ago`;
     }
+  };
+
+  const formatDetailedTime = (timestamp: string | number) => {
+    let time: Date;
+    
+    if (typeof timestamp === 'number') {
+      // If it's a number, check if it's in seconds or milliseconds
+      // If it's less than 1e12, it's likely in seconds, so multiply by 1000
+      time = timestamp < 1e12 ? new Date(timestamp * 1000) : new Date(timestamp);
+    } else {
+      // If it's a string, try to parse it directly
+      time = new Date(timestamp);
+    }
+    
+    // Check if the date is valid
+    if (isNaN(time.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    return time.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const handleCloseAlert = async (alertId: string) => {
@@ -872,9 +909,9 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                 <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
                   Loading SOS requests...
                 </div>
-              ) : sosRequests.length > 0 ? (
+              ) : sortedSOSRequests.length > 0 ? (
                 <div style={{ padding: '10px' }}>
-                  {sosRequests.map((sos) => (
+                  {sortedSOSRequests.map((sos: SOSRequest) => (
                     <div
                       key={sos.id}
                       style={{
@@ -932,7 +969,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                         marginTop: '8px'
                       }}>
                         <span>📍 {formatCoordinates(sos.location)}</span>
-                        <span>{formatTimeAgo(sos.timestamp)}</span>
+                        <span>{formatDetailedTime(sos.timestamp)}</span>
                       </div>
 
                       <div style={{ marginTop: '10px', display: 'flex', gap: '8px' }}>
@@ -970,7 +1007,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                             fontWeight: '600'
                           }}
                         >
-                          ✅ Resolve
+                          ✅ Mark as Resolved
                         </button>
                       </div>
                     </div>
@@ -1422,7 +1459,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         ))}
 
         {/* SOS Request Markers */}
-        {mapReady && sosRequests.filter(sos => sos.location && sos.location.length === 2).map((sos) => (
+        {mapReady && sortedSOSRequests.filter((sos: SOSRequest) => sos.location && sos.location.length === 2).map((sos: SOSRequest) => (
           <Marker
             key={sos.id}
             position={sos.location}
@@ -1483,7 +1520,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                     <strong>Location:</strong> {sos.location[0].toFixed(4)}, {sos.location[1].toFixed(4)}
                   </p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
-                    <strong>Time:</strong> {formatTimeAgo(sos.timestamp)} ({new Date(sos.timestamp).toLocaleString()})
+                    <strong>Time:</strong> {formatDetailedTime(sos.timestamp)}
                   </p>
                 </div>
 
@@ -1518,7 +1555,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                       flex: 1
                     }}
                   >
-                    ✅ Resolve
+                    ✅ Mark as Resolved
                   </button>
                 </div>
               </div>

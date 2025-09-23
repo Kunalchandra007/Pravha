@@ -138,11 +138,58 @@ const FloodRiskLegend: React.FC<{user?: {role: string} | null}> = ({user}) => (
 
 const MapController: React.FC<{ center: [number, number]; onLocationSelect?: (location: [number, number]) => void }> = ({ center, onLocationSelect }) => {
   const map = useMap();
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
+  const [lastCenter, setLastCenter] = useState<[number, number] | null>(null);
+  const [userZoomLevel, setUserZoomLevel] = useState<number | null>(null);
 
   useEffect(() => {
-    map.setView(center, 13);
+    // Only update map center if user is not manually interacting
+    if (!isUserInteracting && lastCenter && 
+        (Math.abs(center[0] - lastCenter[0]) > 0.001 || Math.abs(center[1] - lastCenter[1]) > 0.001)) {
+      const zoomLevel = userZoomLevel || map.getZoom(); // Preserve current zoom level
+      map.setView(center, zoomLevel, {
+        animate: true,
+        duration: 0.3, // Reduced from 0.5 to 0.3 for faster animation
+        easeLinearity: 0.25 // Added better easing
+      });
+      setLastCenter(center);
+    } else if (!lastCenter) {
+      // Initial center setting
+      map.setView(center, 13, {
+        animate: true,
+        duration: 0.3, // Reduced from 0.5 to 0.3 for faster animation
+        easeLinearity: 0.25 // Added better easing
+      });
+      setLastCenter(center);
+    }
+  }, [map, center, isUserInteracting, lastCenter, userZoomLevel]);
 
-    // Add click event listener
+  useEffect(() => {
+    // Track user interactions
+    let interactionTimeout: NodeJS.Timeout;
+    
+    const handleInteractionStart = () => {
+      setIsUserInteracting(true);
+      clearTimeout(interactionTimeout);
+    };
+    
+    const handleInteractionEnd = () => {
+      // Add a delay before allowing programmatic updates
+      interactionTimeout = setTimeout(() => {
+        setIsUserInteracting(false);
+      }, 3000); // Increased to 3 seconds to give users more time
+    };
+
+    const handleZoomEnd = () => {
+      // Store user's zoom level when they zoom
+      setUserZoomLevel(map.getZoom());
+      // Don't immediately end interaction after zoom - let user continue
+      interactionTimeout = setTimeout(() => {
+        setIsUserInteracting(false);
+      }, 2000); // 2 second delay after zoom
+    };
+
+    // Add click event listener for location selection
     const handleClick = (e: any) => {
       const { lat, lng } = e.latlng;
       console.log('Map clicked at:', lat, lng); // Debug log
@@ -160,14 +207,32 @@ const MapController: React.FC<{ center: [number, number]; onLocationSelect?: (lo
           .openOn(map);
       }
     };
-
+    
+    // Track all possible user interactions
+    map.on('zoomstart', handleInteractionStart);
+    map.on('zoomend', handleZoomEnd);
+    map.on('dragstart', handleInteractionStart);
+    map.on('dragend', handleInteractionEnd);
+    map.on('moveend', handleInteractionEnd);
     map.on('click', handleClick);
+    map.on('dblclick', handleInteractionStart);
+    map.on('mousedown', handleInteractionStart);
+    map.on('mouseup', handleInteractionEnd);
 
     // Cleanup
     return () => {
+      clearTimeout(interactionTimeout);
+      map.off('zoomstart', handleInteractionStart);
+      map.off('zoomend', handleZoomEnd);
+      map.off('dragstart', handleInteractionStart);
+      map.off('dragend', handleInteractionEnd);
+      map.off('moveend', handleInteractionEnd);
       map.off('click', handleClick);
+      map.off('dblclick', handleInteractionStart);
+      map.off('mousedown', handleInteractionStart);
+      map.off('mouseup', handleInteractionEnd);
     };
-  }, [map, center, onLocationSelect]);
+  }, [map, onLocationSelect]);
 
   return null;
 };
@@ -176,11 +241,19 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
   const [floodRiskZones, setFloodRiskZones] = useState<FloodRiskZone[]>([]);
   const [sensorData, setSensorData] = useState<SensorData[]>([]);
   const [selectedZone, setSelectedZone] = useState<FloodRiskZone | null>(null);
-  const [mapCenter] = useState<[number, number]>([28.6139, 77.2090]); // New Delhi coordinates
+  const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]); // New Delhi coordinates
   const [sosRequests, setSosRequests] = useState<any[]>([]);
   const [showSendAlert, setShowSendAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSendingAlert, setIsSendingAlert] = useState(false);
+
+  // Auto-center map on prediction location when prediction is made
+  useEffect(() => {
+    if (predictionLocation && prediction) {
+      console.log('🎯 Auto-centering map on prediction location:', predictionLocation);
+      setMapCenter(predictionLocation);
+    }
+  }, [predictionLocation, prediction]);
 
   // Flood-prone places and shelter data
   const floodPronePlaces: Array<{name: string; location: [number, number]; state: string; type: string}> = [
@@ -401,8 +474,52 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
 
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
+      {/* Prediction Notification Banner */}
+      {predictionLocation && prediction && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(220, 38, 38, 0.3)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontSize: '16px',
+          fontWeight: '600',
+          animation: 'slideDown 0.5s ease-out',
+          border: '2px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <div style={{ fontSize: '24px' }}>🎯</div>
+          <div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+              AI Prediction Complete!
+            </div>
+            <div style={{ fontSize: '14px', opacity: 0.9 }}>
+              {prediction.risk_level} Risk ({prediction.probability ? (prediction.probability * 100).toFixed(1) : 'N/A'}%) - Location marked on map
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CSS Animations for Prediction Markers */}
       <style>{`
+        @keyframes slideDown {
+          0% {
+            transform: translateX(-50%) translateY(-100%);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+          }
+        }
+        
         .prediction-pulse {
           position: absolute;
           top: -10px;
@@ -439,6 +556,27 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
           }
           60% {
             transform: translateY(-5px);
+          }
+        }
+        
+        @keyframes markerBounce {
+          0%, 20%, 50%, 80%, 100% {
+            transform: scale(1);
+          }
+          40% {
+            transform: scale(1.1);
+          }
+          60% {
+            transform: scale(1.05);
+          }
+        }
+        
+        @keyframes fadeInOut {
+          0%, 100% {
+            opacity: 0.7;
+          }
+          50% {
+            opacity: 1;
           }
         }
         
@@ -816,48 +954,66 @@ ${prediction.probability > zone.probability ? '⚠️ Risk has INCREASED' :
               </Popup>
             </Circle>
 
-            {/* Your Custom Prediction Marker - Pulsing Animation */}
+            {/* Your Custom Prediction Marker - Enhanced Pulsing Animation */}
             <Marker
               position={predictionLocation}
               icon={L.divIcon({
                 html: `
-                  <div class="prediction-marker-container">
+                  <div class="prediction-marker-container" style="position: relative;">
                     <div class="prediction-pulse"></div>
+                    <div class="prediction-pulse" style="animation-delay: 0.5s;"></div>
+                    <div class="prediction-pulse" style="animation-delay: 1s;"></div>
                     <div style="
                       background: ${getPredictionRiskColor(prediction.risk_level)};
-                      width: 35px;
-                      height: 35px;
+                      width: 40px;
+                      height: 40px;
                       border-radius: 50%;
                       border: 4px solid white;
                       display: flex;
                       align-items: center;
                       justify-content: center;
-                      font-size: 18px;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+                      font-size: 20px;
+                      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
                       position: relative;
                       z-index: 10;
+                      animation: markerBounce 2s infinite;
                     ">🎯</div>
                     <div style="
                       position: absolute;
-                      top: -5px;
-                      right: -5px;
+                      top: -8px;
+                      right: -8px;
                       background: #3b82f6;
                       color: white;
                       border-radius: 50%;
-                      width: 16px;
-                      height: 16px;
+                      width: 20px;
+                      height: 20px;
                       display: flex;
                       align-items: center;
                       justify-content: center;
+                      font-size: 12px;
+                      font-weight: bold;
+                      border: 3px solid white;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    ">AI</div>
+                    <div style="
+                      position: absolute;
+                      bottom: -25px;
+                      left: 50%;
+                      transform: translateX(-50%);
+                      background: rgba(0,0,0,0.8);
+                      color: white;
+                      padding: 4px 8px;
+                      border-radius: 4px;
                       font-size: 10px;
                       font-weight: bold;
-                      border: 2px solid white;
-                    ">AI</div>
+                      white-space: nowrap;
+                      animation: fadeInOut 3s infinite;
+                    ">${prediction.risk_level} RISK</div>
                   </div>
                 `,
                 className: 'custom-prediction-marker',
-                iconSize: [35, 35],
-                iconAnchor: [17.5, 17.5]
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
               })}
             >
               <Popup>

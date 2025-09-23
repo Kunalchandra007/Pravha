@@ -55,7 +55,7 @@ class DatabaseService:
             # Add metadata
             user_data.update({
                 'id': str(uuid.uuid4()),
-                'created_at': datetime.utcnow(),
+                'created_at': datetime.now(),
                 'is_active': True,
                 'last_login': None
             })
@@ -92,7 +92,7 @@ class DatabaseService:
                 collection = await get_collection(db_config.USERS_COLLECTION)
                 await collection.update_one(
                     {"email": email},
-                    {"$set": {"last_login": datetime.utcnow()}}
+                    {"$set": {"last_login": datetime.now()}}
                 )
                 return user
             return None
@@ -126,7 +126,7 @@ class DatabaseService:
             
             alert_data.update({
                 'id': str(uuid.uuid4()),
-                'timestamp': datetime.utcnow(),
+                'timestamp': datetime.now(),
                 'status': 'ACTIVE',
                 'resolved_at': None
             })
@@ -162,7 +162,7 @@ class DatabaseService:
             update_data = {"status": status}
             
             if status == "RESOLVED":
-                update_data["resolved_at"] = datetime.utcnow()
+                update_data["resolved_at"] = datetime.now()
                 if resolution_notes:
                     update_data["resolution_notes"] = resolution_notes
             
@@ -185,7 +185,7 @@ class DatabaseService:
             
             sos_data.update({
                 'id': str(uuid.uuid4()),
-                'timestamp': datetime.utcnow(),
+                'timestamp': datetime.now(),
                 'status': 'PENDING',
                 'assigned_officer': None,
                 'response_time': None,
@@ -225,7 +225,7 @@ class DatabaseService:
             collection = await get_collection(db_config.SOS_REQUESTS_COLLECTION)
             
             if update_data.get('status') == 'RESOLVED':
-                update_data['resolved_at'] = datetime.utcnow()
+                update_data['resolved_at'] = datetime.now()
             
             result = await collection.update_one(
                 {"id": sos_id},
@@ -248,8 +248,8 @@ class DatabaseService:
                 'id': str(uuid.uuid4()),
                 'current_occupancy': 0,
                 'status': 'AVAILABLE',
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
+                'created_at': datetime.now(),
+                'updated_at': datetime.now()
             })
             
             result = await collection.insert_one(shelter_data)
@@ -280,7 +280,7 @@ class DatabaseService:
         """Update shelter information"""
         try:
             collection = await get_collection(db_config.SHELTERS_COLLECTION)
-            update_data['updated_at'] = datetime.utcnow()
+            update_data['updated_at'] = datetime.now()
             
             result = await collection.update_one(
                 {"id": shelter_id},
@@ -307,8 +307,8 @@ class DatabaseService:
                 update_data = {
                     'value': sensor_data['value'],
                     'status': sensor_data['status'],
-                    'last_reading': datetime.utcnow(),
-                    'updated_at': datetime.utcnow()
+                    'last_reading': datetime.now(),
+                    'updated_at': datetime.now()
                 }
                 
                 await collection.update_one(
@@ -323,9 +323,9 @@ class DatabaseService:
                 # Create new sensor
                 sensor_data.update({
                     'id': str(uuid.uuid4()),
-                    'last_reading': datetime.utcnow(),
-                    'created_at': datetime.utcnow(),
-                    'updated_at': datetime.utcnow()
+                    'last_reading': datetime.now(),
+                    'created_at': datetime.now(),
+                    'updated_at': datetime.now()
                 })
                 
                 result = await collection.insert_one(sensor_data)
@@ -360,7 +360,7 @@ class DatabaseService:
             
             prediction_data.update({
                 'id': str(uuid.uuid4()),
-                'timestamp': datetime.utcnow()
+                'timestamp': datetime.now()
             })
             
             result = await collection.insert_one(prediction_data)
@@ -400,7 +400,7 @@ class DatabaseService:
             
             subscriber_data.update({
                 'id': str(uuid.uuid4()),
-                'subscribed_at': datetime.utcnow(),
+                'subscribed_at': datetime.now(),
                 'is_active': True
             })
             
@@ -458,7 +458,7 @@ class DatabaseService:
             subscribers_collection = await get_collection(db_config.SUBSCRIBERS_COLLECTION)
             stats['total_subscribers'] = await subscribers_collection.count_documents({"is_active": True})
             
-            stats['last_updated'] = datetime.utcnow()
+            stats['last_updated'] = datetime.now()
             
             return stats
         except Exception as e:
@@ -474,7 +474,7 @@ class DatabaseService:
             
             notification_data.update({
                 'id': str(uuid.uuid4()),
-                'timestamp': datetime.utcnow(),
+                'timestamp': datetime.now(),
                 'is_read': False,
                 'read_at': None
             })

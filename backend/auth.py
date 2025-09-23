@@ -43,9 +43,9 @@ class AuthService:
         """Create a JWT access token"""
         to_encode = data.copy()
         if expires_delta:
-            expire = datetime.utcnow() + expires_delta
+            expire = datetime.now() + expires_delta
         else:
-            expire = datetime.utcnow() + timedelta(minutes=self.access_token_expire_minutes)
+            expire = datetime.now() + timedelta(minutes=self.access_token_expire_minutes)
         
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
@@ -144,7 +144,7 @@ class AuthService:
             )
         
         # Update last login
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now()
         users_db[user.id] = user
         
         # Create access token

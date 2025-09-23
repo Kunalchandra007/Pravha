@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -48,7 +48,44 @@ interface CitizenGISProps {
 
 const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [shelters, setShelters] = useState<Shelter[]>([]);
+  // Hardcoded demo shelters to ensure visibility
+  const defaultShelters: Shelter[] = [
+    {
+      id: 'default-1',
+      name: 'Central Emergency Shelter',
+      address: 'Central Delhi, New Delhi',
+      capacity: 200,
+      currentOccupancy: 45,
+      coordinates: [28.6139, 77.2090],
+      facilities: ['Food', 'Water', 'Medical', 'Beds'],
+      contact: '+91-9876543210',
+      isDemo: true
+    },
+    {
+      id: 'default-2', 
+      name: 'Community Relief Center',
+      address: 'Connaught Place, New Delhi',
+      capacity: 150,
+      currentOccupancy: 80,
+      coordinates: [28.6315, 77.2167],
+      facilities: ['Food', 'Water', 'First Aid'],
+      contact: '+91-9876543211',
+      isDemo: true
+    },
+    {
+      id: 'default-3',
+      name: 'Flood Relief Camp',
+      address: 'India Gate Area, New Delhi', 
+      capacity: 300,
+      currentOccupancy: 120,
+      coordinates: [28.6129, 77.2295],
+      facilities: ['Food', 'Water', 'Medical', 'Transport'],
+      contact: '+91-9876543212',
+      isDemo: true
+    }
+  ];
+
+  const [shelters, setShelters] = useState<Shelter[]>(defaultShelters);
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -59,6 +96,11 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
   const [mapReady, setMapReady] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [forceMapUpdate, setForceMapUpdate] = useState(false);
+  
+  // Debouncing refs to prevent rapid updates
+  const alertClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const shelterClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
 
   // Generate random coordinates around Delhi for demo purposes
   const generateRandomCoordinates = (baseLat: number = 28.6139, baseLng: number = 77.2090, radius: number = 0.1) => {
@@ -175,23 +217,41 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
             
             if (sheltersResponse.ok) {
               const sheltersData = await sheltersResponse.json();
-              const realShelters = (sheltersData.shelters || []).map((shelter: any) => ({
-                ...shelter,
-                coordinates: shelter.coordinates || [shelter.latitude || 28.6139, shelter.longitude || 77.2090],
-                isDemo: false,
-                state: getStateFromCoordinates(
-                  shelter.coordinates?.[0] || shelter.latitude || 28.6139,
-                  shelter.coordinates?.[1] || shelter.longitude || 77.2090
-                )
-              }));
+              console.log('Raw shelters data from API:', sheltersData);
               
-              setShelters([...realShelters, ...demoShelters]);
+              const realShelters = (sheltersData.shelters || []).map((shelter: any) => {
+                // Handle different coordinate formats
+                let coordinates = [28.6139, 77.2090]; // Default to Delhi
+                
+                if (shelter.coordinates && Array.isArray(shelter.coordinates) && shelter.coordinates.length === 2) {
+                  coordinates = shelter.coordinates;
+                } else if (shelter.location && Array.isArray(shelter.location) && shelter.location.length === 2) {
+                  coordinates = shelter.location;
+                } else if (shelter.latitude && shelter.longitude) {
+                  coordinates = [shelter.latitude, shelter.longitude];
+                }
+                
+                console.log(`Processing shelter: ${shelter.name}, coordinates:`, coordinates);
+                
+                return {
+                  ...shelter,
+                  coordinates,
+                  currentOccupancy: shelter.current_occupancy || shelter.currentOccupancy || 0,
+                  isDemo: false,
+                  state: getStateFromCoordinates(coordinates[0], coordinates[1])
+                };
+              });
+              
+              console.log('Processed real shelters:', realShelters);
+              setShelters([...defaultShelters, ...realShelters, ...demoShelters]);
             } else {
-              setShelters(demoShelters);
+              console.log('Shelters API failed, using default shelters');
+              setShelters([...defaultShelters, ...demoShelters]);
             }
           } catch (shelterError) {
             console.error('Error fetching shelters:', shelterError);
-            setShelters(demoShelters);
+            console.log('Using default shelters due to API error');
+            setShelters([...defaultShelters, ...demoShelters]);
           }
         }
       } catch (error) {
@@ -310,12 +370,12 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
     return nearestShelter;
   };
 
-  // Generate route between two points (simplified straight line for demo)
+  // Generate route between two points (optimized for performance)
   const generateRoute = (start: [number, number], end: [number, number]) => {
     const points: [number, number][] = [start];
     
-    // Add intermediate points for a more realistic route
-    const steps = 10;
+    // Reduced steps for better performance while maintaining visual quality
+    const steps = 5; // Reduced from 10 to 5
     for (let i = 1; i < steps; i++) {
       const lat = start[0] + (end[0] - start[0]) * (i / steps);
       const lng = start[1] + (end[1] - start[1]) * (i / steps);
@@ -326,56 +386,56 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
     return points;
   };
 
-  // Handle alert click - find nearest shelter and show route
+  // Handle alert click - find nearest shelter and show route (optimized with debouncing)
   const handleAlertClick = (alert: Alert) => {
-    setSelectedAlert(alert);
-    setMapCenter(alert.coordinates);
-    setIsNavigating(true);
-    setForceMapUpdate(true); // Force map update
-    
-    const nearestShelter = findNearestShelter(alert.coordinates);
-    if (nearestShelter) {
-      setSelectedShelter(nearestShelter);
-      const routePoints = generateRoute(alert.coordinates, nearestShelter.coordinates);
-      setRoute(routePoints);
+    // Clear any existing timeout
+    if (alertClickTimeoutRef.current) {
+      clearTimeout(alertClickTimeoutRef.current);
     }
     
-    // Reset force update after a short delay
-    setTimeout(() => {
-      setForceMapUpdate(false);
-    }, 100);
-    
-    // Smooth zoom to alert location
-    setTimeout(() => {
-      const mapElement = document.querySelector('.leaflet-container');
-      if (mapElement) {
-        mapElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Debounce rapid clicks
+    alertClickTimeoutRef.current = setTimeout(() => {
+      setSelectedAlert(alert);
+      setMapCenter(alert.coordinates);
+      setIsNavigating(true);
+      setForceMapUpdate(true);
+      
+      const nearestShelter = findNearestShelter(alert.coordinates);
+      if (nearestShelter) {
+        setSelectedShelter(nearestShelter);
+        const routePoints = generateRoute(alert.coordinates, nearestShelter.coordinates);
+        setRoute(routePoints);
       }
-      setIsNavigating(false);
-    }, 1000);
+      
+      // Optimized timing - single timeout for all operations
+      setTimeout(() => {
+        setForceMapUpdate(false);
+        setIsNavigating(false);
+      }, 200); // Further reduced to 200ms for even faster response
+    }, 100); // 100ms debounce delay
   };
 
-  // Handle shelter click
+  // Handle shelter click (optimized with debouncing)
   const handleShelterClick = (shelter: Shelter) => {
-    setSelectedShelter(shelter);
-    setMapCenter(shelter.coordinates);
-    setRoute(null);
-    setIsNavigating(true);
-    setForceMapUpdate(true); // Force map update
+    // Clear any existing timeout
+    if (shelterClickTimeoutRef.current) {
+      clearTimeout(shelterClickTimeoutRef.current);
+    }
     
-    // Reset force update after a short delay
-    setTimeout(() => {
-      setForceMapUpdate(false);
-    }, 100);
-    
-    // Smooth zoom to shelter location
-    setTimeout(() => {
-      const mapElement = document.querySelector('.leaflet-container');
-      if (mapElement) {
-        mapElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      setIsNavigating(false);
-    }, 1000);
+    // Debounce rapid clicks
+    shelterClickTimeoutRef.current = setTimeout(() => {
+      setSelectedShelter(shelter);
+      setMapCenter(shelter.coordinates);
+      setRoute(null);
+      setIsNavigating(true);
+      setForceMapUpdate(true);
+      
+      // Optimized timing - single timeout for all operations
+      setTimeout(() => {
+        setForceMapUpdate(false);
+        setIsNavigating(false);
+      }, 200); // Further reduced to 200ms for even faster response
+    }, 100); // 100ms debounce delay
   };
 
   const MapController: React.FC<{ center: [number, number], forceUpdate?: boolean }> = ({ center, forceUpdate = false }) => {
@@ -383,14 +443,16 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
     const [isUserInteracting, setIsUserInteracting] = useState(false);
     const [lastCenter, setLastCenter] = useState<[number, number] | null>(null);
     const [shouldUpdate, setShouldUpdate] = useState(true);
+    const [userZoomLevel, setUserZoomLevel] = useState<number | null>(null);
     
     useEffect(() => {
       // Force update when explicitly requested (e.g., clicking on alerts/shelters)
       if (forceUpdate) {
-        map.setView(center, 15, {
+        const zoomLevel = userZoomLevel || 15; // Use user's zoom level if available
+        map.setView(center, zoomLevel, {
           animate: true,
-          duration: 1.0,
-          easeLinearity: 0.1
+          duration: 0.4, // Reduced from 1.0 to 0.4 for faster animation
+          easeLinearity: 0.25 // Improved easing for smoother animation
         });
         setLastCenter(center);
         setShouldUpdate(false);
@@ -400,24 +462,25 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
       // Only update map center if user is not manually interacting and we should update
       if (!isUserInteracting && shouldUpdate && lastCenter && 
           (Math.abs(center[0] - lastCenter[0]) > 0.001 || Math.abs(center[1] - lastCenter[1]) > 0.001)) {
-        map.setView(center, 15, {
+        const zoomLevel = userZoomLevel || map.getZoom(); // Preserve current zoom level
+        map.setView(center, zoomLevel, {
           animate: true,
-          duration: 1.0,
-          easeLinearity: 0.1
+          duration: 0.4, // Reduced from 1.0 to 0.4 for faster animation
+          easeLinearity: 0.25 // Improved easing for smoother animation
         });
         setLastCenter(center);
         setShouldUpdate(false); // Prevent further updates until user interaction
       } else if (!lastCenter) {
         // Initial center setting
-        map.setView(center, 15, {
+        map.setView(center, 13, {
           animate: true,
-          duration: 1.0,
-          easeLinearity: 0.1
+          duration: 0.4, // Reduced from 1.0 to 0.4 for faster animation
+          easeLinearity: 0.25 // Improved easing for smoother animation
         });
         setLastCenter(center);
         setShouldUpdate(false);
       }
-    }, [map, center, isUserInteracting, lastCenter, shouldUpdate, forceUpdate]);
+    }, [map, center, isUserInteracting, lastCenter, shouldUpdate, forceUpdate, userZoomLevel]);
     
     useEffect(() => {
       // Track user interactions
@@ -433,12 +496,22 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
         interactionTimeout = setTimeout(() => {
           setIsUserInteracting(false);
           setShouldUpdate(true); // Re-enable updates after user interaction
-        }, 1000); // 1 second delay
+        }, 3000); // Increased to 3 seconds to give users more time
+      };
+
+      const handleZoomEnd = () => {
+        // Store user's zoom level when they zoom
+        setUserZoomLevel(map.getZoom());
+        // Don't immediately end interaction after zoom - let user continue
+        interactionTimeout = setTimeout(() => {
+          setIsUserInteracting(false);
+          setShouldUpdate(true);
+        }, 2000); // 2 second delay after zoom
       };
       
       // Track all possible user interactions
       map.on('zoomstart', handleInteractionStart);
-      map.on('zoomend', handleInteractionEnd);
+      map.on('zoomend', handleZoomEnd);
       map.on('dragstart', handleInteractionStart);
       map.on('dragend', handleInteractionEnd);
       map.on('moveend', handleInteractionEnd);
@@ -450,7 +523,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
       return () => {
         clearTimeout(interactionTimeout);
         map.off('zoomstart', handleInteractionStart);
-        map.off('zoomend', handleInteractionEnd);
+        map.off('zoomend', handleZoomEnd);
         map.off('dragstart', handleInteractionStart);
         map.off('dragend', handleInteractionEnd);
         map.off('moveend', handleInteractionEnd);
@@ -872,7 +945,21 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
         ))}
 
           {/* Shelter Markers */}
-          {mapReady && shelters.filter(shelter => shelter.coordinates && shelter.coordinates.length === 2).map((shelter) => (
+          {mapReady && shelters.filter(shelter => {
+            const hasValidCoords = shelter.coordinates && 
+              Array.isArray(shelter.coordinates) && 
+              shelter.coordinates.length === 2 &&
+              typeof shelter.coordinates[0] === 'number' &&
+              typeof shelter.coordinates[1] === 'number' &&
+              !isNaN(shelter.coordinates[0]) &&
+              !isNaN(shelter.coordinates[1]);
+            
+            if (!hasValidCoords) {
+              console.log(`Shelter ${shelter.name} has invalid coordinates:`, shelter.coordinates);
+            }
+            
+            return hasValidCoords;
+          }).map((shelter) => (
           <Marker
             key={`shelter-${shelter.id}`}
             position={shelter.coordinates}

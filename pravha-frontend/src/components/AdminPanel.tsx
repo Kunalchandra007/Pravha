@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './AdminPanel.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
@@ -98,6 +98,55 @@ const AdminPanel = ({ user, onBack }: {
   // Alerts and SOS states
   const [currentAlerts, setCurrentAlerts] = useState<any[]>([]);
   const [currentSOS, setCurrentSOS] = useState<any[]>([]);
+
+  // Format time functions
+  const formatTimeAgo = (timestamp: number) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds}s ago`;
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}m ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h ago`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}d ago`;
+    }
+  };
+
+  const formatDetailedTime = (timestamp: number) => {
+    // Handle timestamp conversion properly
+    // If it's less than 1e12, it's likely in seconds, so multiply by 1000
+    const time = timestamp < 1e12 ? new Date(timestamp * 1000) : new Date(timestamp);
+    
+    // Check if the date is valid
+    if (isNaN(time.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    return time.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Sort SOS requests by latest timestamp (newest first)
+  const sortedSOS = useMemo(() => {
+    return [...currentSOS].sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return timeB - timeA; // Newest first
+    });
+  }, [currentSOS]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [sosUpdating, setSosUpdating] = useState<string | null>(null);
 
@@ -118,6 +167,23 @@ const AdminPanel = ({ user, onBack }: {
   // Shelter list state
   const [shelters, setShelters] = useState<any[]>([]);
   const [sheltersLoading, setSheltersLoading] = useState(false);
+  
+  // Shelter management modals
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCapacityModal, setShowCapacityModal] = useState(false);
+  const [selectedShelter, setSelectedShelter] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    address: '',
+    capacity: '',
+    contact: '',
+    phone: '',
+    facilities: [] as string[]
+  });
+  const [capacityForm, setCapacityForm] = useState({
+    current_occupancy: '',
+    status: 'available'
+  });
 
   // Hardcoded shelters for demo
   const hardcodedShelters = [
@@ -606,6 +672,8 @@ const AdminPanel = ({ user, onBack }: {
         // Show appropriate success message based on status
         if (updateData.status === 'RESOLVED') {
           alert('✅ SOS request marked as resolved and removed from pending list!');
+          // Immediately remove resolved SOS from local state
+          setCurrentSOS(prev => prev.filter(sos => sos.id !== sosId));
         } else if (updateData.status === 'IN_PROGRESS') {
           alert('🚑 SOS request marked as in progress!');
         } else if (updateData.status === 'ASSIGNED') {
@@ -614,8 +682,10 @@ const AdminPanel = ({ user, onBack }: {
           alert('SOS request updated successfully!');
         }
         
-        // Refresh data immediately
-        await fetchCurrentAlertsAndSOS();
+        // Refresh data immediately (except for resolved ones which are already removed)
+        if (updateData.status !== 'RESOLVED') {
+          await fetchCurrentAlertsAndSOS();
+        }
       } else {
         const error = await response.json();
         console.error('Failed to update SOS request:', error);
@@ -626,6 +696,116 @@ const AdminPanel = ({ user, onBack }: {
       alert('Error updating SOS request');
     } finally {
       setSosUpdating(null);
+    }
+  };
+
+  // Shelter management handlers
+  const handleEditShelter = (shelter: any) => {
+    setSelectedShelter(shelter);
+    setEditForm({
+      name: shelter.name || '',
+      address: shelter.address || '',
+      capacity: shelter.capacity?.toString() || '',
+      contact: shelter.contact || '',
+      phone: shelter.phone || '',
+      facilities: Array.isArray(shelter.facilities) ? shelter.facilities : []
+    });
+    setShowEditModal(true);
+  };
+
+  const handleManageCapacity = (shelter: any) => {
+    setSelectedShelter(shelter);
+    setCapacityForm({
+      current_occupancy: shelter.current_occupancy?.toString() || '0',
+      status: shelter.status || 'available'
+    });
+    setShowCapacityModal(true);
+  };
+
+  const handleContactShelter = (shelter: any) => {
+    if (shelter.phone) {
+      window.open(`tel:${shelter.phone}`, '_self');
+    } else {
+      alert('Phone number not available for this shelter');
+    }
+  };
+
+  const handleViewLocation = (shelter: any) => {
+    if (shelter.location && Array.isArray(shelter.location) && shelter.location.length === 2) {
+      setMapCenter([shelter.location[0], shelter.location[1]]);
+      setActiveTab('gis');
+    } else {
+      alert('Location data not available for this shelter');
+    }
+  };
+
+  const handleUpdateShelter = async () => {
+    if (!selectedShelter) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const updateData = {
+        name: editForm.name,
+        address: editForm.address,
+        capacity: parseInt(editForm.capacity),
+        contact: editForm.contact,
+        phone: editForm.phone,
+        facilities: editForm.facilities
+      };
+
+      const response = await fetch(`http://localhost:8002/admin/shelters/${selectedShelter.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        alert('✅ Shelter updated successfully!');
+        setShowEditModal(false);
+        await fetchShelters();
+      } else {
+        const error = await response.json();
+        alert(`Failed to update shelter: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Error updating shelter:', error);
+      alert('Error updating shelter');
+    }
+  };
+
+  const handleUpdateCapacity = async () => {
+    if (!selectedShelter) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const updateData = {
+        current_occupancy: parseInt(capacityForm.current_occupancy),
+        status: capacityForm.status
+      };
+
+      const response = await fetch(`http://localhost:8002/admin/shelters/${selectedShelter.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        alert('✅ Shelter capacity updated successfully!');
+        setShowCapacityModal(false);
+        await fetchShelters();
+      } else {
+        const error = await response.json();
+        alert(`Failed to update capacity: ${error.detail}`);
+      }
+    } catch (error) {
+      console.error('Error updating capacity:', error);
+      alert('Error updating capacity');
     }
   };
 
@@ -779,9 +959,9 @@ const AdminPanel = ({ user, onBack }: {
         <h3>🆘 Pending SOS Requests</h3>
         {alertsLoading ? (
           <div className="loading-message">Loading SOS requests...</div>
-        ) : currentSOS.length > 0 ? (
+        ) : sortedSOS.length > 0 ? (
           <div className="sos-list">
-            {currentSOS.slice(0, 3).map((sos, index) => (
+            {sortedSOS.slice(0, 3).map((sos, index) => (
               <div key={index} className="sos-item">
                 <div className="sos-header">
                   <span className="sos-icon">🆘</span>
@@ -790,7 +970,7 @@ const AdminPanel = ({ user, onBack }: {
                 </div>
                 <div className="sos-details">
                   <div className="sos-location">📍 {sos.location ? `${sos.location[0]?.toFixed(4)}, ${sos.location[1]?.toFixed(4)}` : 'Unknown Location'}</div>
-                  <div className="sos-time">⏰ {new Date(sos.timestamp).toLocaleString()}</div>
+                  <div className="sos-time">⏰ {formatDetailedTime(sos.timestamp)}</div>
                   <div className="sos-type">🚨 {sos.emergencyType || 'Emergency'}</div>
                   {sos.message && <div className="sos-message">💬 {sos.message}</div>}
                 </div>
@@ -1293,9 +1473,9 @@ const AdminPanel = ({ user, onBack }: {
           <h3>📋 Active SOS Requests</h3>
           {alertsLoading ? (
             <div className="loading-message">Loading SOS requests...</div>
-          ) : currentSOS.length > 0 ? (
+          ) : sortedSOS.length > 0 ? (
             <div className="sos-requests-grid">
-              {currentSOS.map((sos, index) => (
+              {sortedSOS.map((sos, index) => (
                 <div key={index} className="sos-request-card">
                   <div className="sos-card-header">
                     <div className="sos-id-badge">
@@ -1318,7 +1498,7 @@ const AdminPanel = ({ user, onBack }: {
                       </div>
                       <div className="sos-info-item">
                         <span className="info-label">⏰ Time:</span>
-                        <span className="info-value">{new Date(sos.timestamp).toLocaleString()}</span>
+                        <span className="info-value">{formatDetailedTime(sos.timestamp)}</span>
                       </div>
                       <div className="sos-info-item">
                         <span className="info-label">🚨 Type:</span>
@@ -1343,7 +1523,7 @@ const AdminPanel = ({ user, onBack }: {
                       className="sos-action-btn respond"
                       onClick={() => handleUpdateSOSRequest(sos.id, { status: 'IN_PROGRESS', assigned_officer: user?.name })}
                     >
-                      � Resspond
+                      � Respond
                     </button>
                     <button
                       className="sos-action-btn dispatch"
@@ -1759,16 +1939,16 @@ const AdminPanel = ({ user, onBack }: {
                     </div>
 
                     <div className="shelter-card-actions">
-                      <button className="shelter-action-btn edit">
+                      <button className="shelter-action-btn edit" onClick={() => handleEditShelter(shelter)}>
                         ✏️ Edit
                       </button>
-                      <button className="shelter-action-btn capacity">
+                      <button className="shelter-action-btn capacity" onClick={() => handleManageCapacity(shelter)}>
                         👥 Manage Capacity
                       </button>
-                      <button className="shelter-action-btn contact">
+                      <button className="shelter-action-btn contact" onClick={() => handleContactShelter(shelter)}>
                         📞 Contact
                       </button>
-                      <button className="shelter-action-btn map">
+                      <button className="shelter-action-btn map" onClick={() => handleViewLocation(shelter)}>
                         🗺️ View Location
                       </button>
                     </div>
@@ -1860,6 +2040,160 @@ const AdminPanel = ({ user, onBack }: {
           {renderContent()}
         </div>
       </div>
+
+      {/* Edit Shelter Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>✏️ Edit Shelter</h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Shelter Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  placeholder="Enter shelter name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Address</label>
+                <input
+                  type="text"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                  placeholder="Enter address"
+                />
+              </div>
+              <div className="form-group">
+                <label>Capacity</label>
+                <input
+                  type="number"
+                  value={editForm.capacity}
+                  onChange={(e) => setEditForm({...editForm, capacity: e.target.value})}
+                  placeholder="Enter capacity"
+                />
+              </div>
+              <div className="form-group">
+                <label>Contact Person</label>
+                <input
+                  type="text"
+                  value={editForm.contact}
+                  onChange={(e) => setEditForm({...editForm, contact: e.target.value})}
+                  placeholder="Enter contact person"
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone Number</label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div className="form-group">
+                <label>Facilities</label>
+                <div className="facilities-input">
+                  <input
+                    type="text"
+                    placeholder="Add facility (press Enter)"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement;
+                        if (input.value.trim()) {
+                          setEditForm({
+                            ...editForm,
+                            facilities: [...editForm.facilities, input.value.trim()]
+                          });
+                          input.value = '';
+                        }
+                      }
+                    }}
+                  />
+                  <div className="facilities-tags">
+                    {editForm.facilities.map((facility, idx) => (
+                      <span key={idx} className="facility-tag">
+                        {facility}
+                        <button
+                          onClick={() => setEditForm({
+                            ...editForm,
+                            facilities: editForm.facilities.filter((_, i) => i !== idx)
+                          })}
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowEditModal(false)}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleUpdateShelter}>
+                Update Shelter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Capacity Modal */}
+      {showCapacityModal && (
+        <div className="modal-overlay" onClick={() => setShowCapacityModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>👥 Manage Capacity</h3>
+              <button className="modal-close" onClick={() => setShowCapacityModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Current Occupancy</label>
+                <input
+                  type="number"
+                  value={capacityForm.current_occupancy}
+                  onChange={(e) => setCapacityForm({...capacityForm, current_occupancy: e.target.value})}
+                  placeholder="Enter current occupancy"
+                  min="0"
+                  max={selectedShelter?.capacity || 999}
+                />
+                <small>Max capacity: {selectedShelter?.capacity || 'N/A'}</small>
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select
+                  value={capacityForm.status}
+                  onChange={(e) => setCapacityForm({...capacityForm, status: e.target.value})}
+                >
+                  <option value="available">Available</option>
+                  <option value="full">Full</option>
+                  <option value="maintenance">Under Maintenance</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              <div className="capacity-info">
+                <h4>Current Status</h4>
+                <p><strong>Shelter:</strong> {selectedShelter?.name}</p>
+                <p><strong>Capacity:</strong> {selectedShelter?.capacity} people</p>
+                <p><strong>Current Occupancy:</strong> {selectedShelter?.current_occupancy || 0} people</p>
+                <p><strong>Available:</strong> {(selectedShelter?.capacity || 0) - (selectedShelter?.current_occupancy || 0)} people</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowCapacityModal(false)}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleUpdateCapacity}>
+                Update Capacity
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

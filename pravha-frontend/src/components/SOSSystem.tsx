@@ -77,8 +77,7 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
           case error.POSITION_UNAVAILABLE:
             errorMessage = 'Location information is unavailable';
             break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
+          case error.TIMEOUT:            errorMessage = 'Location request timed out';
             break;
         }
         setLocationError(errorMessage);
