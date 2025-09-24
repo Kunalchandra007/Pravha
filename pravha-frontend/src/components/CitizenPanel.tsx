@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './CitizenPanel.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
+import CitizenGIS from './CitizenGIS';
+import WeatherWidget from './WeatherWidget';
 
 interface LocationData {
   latitude: number;
@@ -54,6 +56,7 @@ const CitizenPanel = ({ user, onBack }: {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [shelterSortBy, setShelterSortBy] = useState<'distance' | 'occupancy'>('distance');
 
   // Precautions state
   const [emergencyKit, setEmergencyKit] = useState([
@@ -138,6 +141,23 @@ const CitizenPanel = ({ user, onBack }: {
     }
   ], []);
 
+  // Sort shelters based on selected criteria
+  const sortedShelters = useMemo(() => {
+    const sheltersToSort = [...shelters];
+    
+    if (shelterSortBy === 'distance') {
+      return sheltersToSort.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    } else if (shelterSortBy === 'occupancy') {
+      return sheltersToSort.sort((a, b) => {
+        const occupancyA = ((a.current_occupancy || 0) / (a.capacity || 1)) * 100;
+        const occupancyB = ((b.current_occupancy || 0) / (b.capacity || 1)) * 100;
+        return occupancyA - occupancyB; // Sort by occupancy percentage (ascending)
+      });
+    }
+    
+    return sheltersToSort;
+  }, [shelters, shelterSortBy]);
+
   useEffect(() => {
     setShelters(hardcodedShelters);
     fetchAlerts();
@@ -206,9 +226,32 @@ const CitizenPanel = ({ user, onBack }: {
   const sendSOSRequest = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+      
+      if (!token || !userData.id) {
+        alert('Please log in to send SOS request');
+        return;
+      }
+
+      // Get current location first if not available
+      if (!currentLocation) {
+        await getCurrentLocation();
+        // Wait a moment for location to be set
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
       const location = currentLocation 
         ? [currentLocation.latitude, currentLocation.longitude]
         : [28.6139, 77.2090]; // Default Delhi location
+
+      const sosData = {
+        location: location,
+        emergency_type: 'FLOOD_EMERGENCY',
+        message: 'Emergency assistance needed due to flooding',
+        user_id: userData.id
+      };
+
+      console.log('Sending SOS request:', sosData);
 
       const response = await fetch('http://localhost:8002/sos', {
         method: 'POST',
@@ -216,21 +259,24 @@ const CitizenPanel = ({ user, onBack }: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          location: location,
-          emergency_type: 'FLOOD_EMERGENCY',
-          message: 'Emergency assistance needed due to flooding'
-        }),
+        body: JSON.stringify(sosData),
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('SOS request sent successfully:', result);
         alert('SOS request sent successfully! Emergency services have been notified.');
+        
+        // Refresh the page to show updated data
+        window.location.reload();
       } else {
-        alert('Failed to send SOS request. Please try again.');
+        const error = await response.json();
+        console.error('SOS request failed:', error);
+        alert(`Failed to send SOS request: ${error.detail || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error sending SOS:', error);
-      alert('Error sending SOS request');
+      alert('Error sending SOS request. Please check your connection and try again.');
     }
   };
 
@@ -295,6 +341,13 @@ const CitizenPanel = ({ user, onBack }: {
           <span>Safety Guide</span>
         </button>
         <button
+          className={`nav-item ${activeTab === 'gis' ? 'active' : ''}`}
+          onClick={() => setActiveTab('gis')}
+        >
+          <span className="nav-icon">🗺️</span>
+          <span>GIS Map</span>
+        </button>
+        <button
           className={`nav-item ${activeTab === 'sos' ? 'active' : ''}`}
           onClick={() => setActiveTab('sos')}
         >
@@ -330,85 +383,95 @@ const CitizenPanel = ({ user, onBack }: {
       </div>
 
       <div className="dashboard-grid">
-        {/* Quick Actions */}
-        <div className="dashboard-card emergency-actions">
-          <h3>🚨 Emergency Actions</h3>
-          <div className="action-buttons">
-            <button className="action-btn sos" onClick={sendSOSRequest}>
-              🆘 Send SOS
-            </button>
-            <button className="action-btn location" onClick={getCurrentLocation}>
-              📍 Get Location
-            </button>
-            <button className="action-btn shelters" onClick={() => setActiveTab('shelters')}>
-              🏥 Find Shelters
-            </button>
-            <button className="action-btn precautions" onClick={() => setActiveTab('precautions')}>
-              🛡️ Safety Guide
-            </button>
+        {/* Top Row - Emergency Actions and Weather */}
+        <div className="dashboard-row top-row">
+          <div className="dashboard-card emergency-actions">
+            <h3>🚨 Emergency Actions</h3>
+            <div className="action-buttons">
+              <button className="action-btn sos" onClick={sendSOSRequest}>
+                🆘 Send SOS
+              </button>
+              <button className="action-btn location" onClick={getCurrentLocation}>
+                📍 Get Location
+              </button>
+              <button className="action-btn shelters" onClick={() => setActiveTab('shelters')}>
+                🏥 Find Shelters
+              </button>
+              <button className="action-btn precautions" onClick={() => setActiveTab('precautions')}>
+                🛡️ Safety Guide
+              </button>
+            </div>
+          </div>
+
+          <WeatherWidget 
+            latitude={currentLocation?.latitude} 
+            longitude={currentLocation?.longitude} 
+          />
+        </div>
+
+        {/* Middle Row - Location and Alerts */}
+        <div className="dashboard-row middle-row">
+          <div className="dashboard-card location-info">
+            <h3>📍 Your Location</h3>
+            {currentLocation ? (
+              <div className="location-display">
+                <p><strong>Coordinates:</strong> {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}</p>
+                <p><strong>Accuracy:</strong> ±{currentLocation.accuracy.toFixed(0)}m</p>
+                <p><strong>Updated:</strong> {new Date(currentLocation.timestamp).toLocaleTimeString()}</p>
+              </div>
+            ) : (
+              <div className="no-location">
+                <p>Location not available</p>
+                <button onClick={getCurrentLocation} disabled={locationLoading}>
+                  {locationLoading ? 'Getting Location...' : 'Get Current Location'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="dashboard-card recent-alerts">
+            <h3>🚨 Recent Alerts</h3>
+            {alerts.length > 0 ? (
+              <div className="alerts-list">
+                {alerts.slice(0, 3).map((alert, index) => (
+                  <div key={index} className="alert-item">
+                    <div className="alert-header">
+                      <span className={`alert-level ${alert.risk_level?.toLowerCase()}`}>
+                        {alert.risk_level}
+                      </span>
+                      <span className="alert-time">
+                        {new Date(alert.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="alert-location">📍 {alert.location}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="no-alerts">No recent alerts</p>
+            )}
           </div>
         </div>
 
-        {/* Current Location */}
-        <div className="dashboard-card location-info">
-          <h3>📍 Your Location</h3>
-          {currentLocation ? (
-            <div className="location-display">
-              <p><strong>Coordinates:</strong> {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}</p>
-              <p><strong>Accuracy:</strong> ±{currentLocation.accuracy.toFixed(0)}m</p>
-              <p><strong>Updated:</strong> {new Date(currentLocation.timestamp).toLocaleTimeString()}</p>
-            </div>
-          ) : (
-            <div className="no-location">
-              <p>Location not available</p>
-              <button onClick={getCurrentLocation} disabled={locationLoading}>
-                {locationLoading ? 'Getting Location...' : 'Get Current Location'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Recent Alerts */}
-        <div className="dashboard-card recent-alerts">
-          <h3>🚨 Recent Alerts</h3>
-          {alerts.length > 0 ? (
-            <div className="alerts-list">
-              {alerts.slice(0, 3).map((alert, index) => (
-                <div key={index} className="alert-item">
-                  <div className="alert-header">
-                    <span className={`alert-level ${alert.risk_level?.toLowerCase()}`}>
-                      {alert.risk_level}
-                    </span>
-                    <span className="alert-time">
-                      {new Date(alert.timestamp).toLocaleDateString()}
-                    </span>
+        {/* Bottom Row - Shelters */}
+        <div className="dashboard-row bottom-row">
+          <div className="dashboard-card nearby-shelters">
+            <h3>🏥 Nearby Shelters</h3>
+          <div className="shelters-preview">
+            {sortedShelters.slice(0, 3).map((shelter) => (
+                <div key={shelter.id} className="shelter-preview">
+                  <div className="shelter-name">{shelter.name}</div>
+                  <div className="shelter-distance">{shelter.distance}km away</div>
+                  <div className={`shelter-status ${shelter.status}`}>
+                    {getStatusText(shelter.status)}
                   </div>
-                  <p className="alert-location">📍 {alert.location}</p>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="no-alerts">No recent alerts</p>
-          )}
-        </div>
-
-        {/* Nearby Shelters */}
-        <div className="dashboard-card nearby-shelters">
-          <h3>🏥 Nearby Shelters</h3>
-          <div className="shelters-preview">
-            {shelters.slice(0, 3).map((shelter) => (
-              <div key={shelter.id} className="shelter-preview">
-                <div className="shelter-name">{shelter.name}</div>
-                <div className="shelter-distance">{shelter.distance}km away</div>
-                <div className={`shelter-status ${shelter.status}`}>
-                  {getStatusText(shelter.status)}
-                </div>
-              </div>
-            ))}
+            <button className="view-all-btn" onClick={() => setActiveTab('shelters')}>
+              View All Shelters
+            </button>
           </div>
-          <button className="view-all-btn" onClick={() => setActiveTab('shelters')}>
-            View All Shelters
-          </button>
         </div>
       </div>
     </div>
@@ -453,13 +516,30 @@ const CitizenPanel = ({ user, onBack }: {
   const renderShelters = () => (
     <div className="citizen-content">
       <div className="content-header">
-        <h2>🏥 Emergency Shelters</h2>
-        <p>Find nearby emergency shelters and evacuation centers</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div>
+            <h2>🏥 Emergency Shelters</h2>
+            <p>Find nearby emergency shelters and evacuation centers</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <label className="shelter-sort-label">
+              Sort by:
+            </label>
+            <select
+              value={shelterSortBy}
+              onChange={(e) => setShelterSortBy(e.target.value as 'distance' | 'occupancy')}
+              className="shelter-sort-select"
+            >
+              <option value="distance">Distance</option>
+              <option value="occupancy">Occupancy</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="shelters-container">
         <div className="shelters-grid">
-          {shelters.map((shelter) => (
+          {sortedShelters.map((shelter) => (
             <div key={shelter.id} className="shelter-card">
               <div className="shelter-card-header">
                 <h3 className="shelter-name">{shelter.name}</h3>
@@ -748,6 +828,8 @@ const CitizenPanel = ({ user, onBack }: {
       case 'precautions':
         console.log('Rendering precautions section'); // Debug log
         return renderPrecautions();
+      case 'gis':
+        return user ? <CitizenGIS user={user} onBack={() => setActiveTab('dashboard')} /> : <div>Please log in to access GIS</div>;
       case 'sos':
         return renderSOS();
       default:

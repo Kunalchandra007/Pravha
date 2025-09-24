@@ -6,8 +6,21 @@ input[type="range"] {
   cursor: pointer;
 }
 
-input[type="range"]::-webkit-slider-track {
-  background: #374151;
+/* More specific selectors for prediction sliders */
+.prediction-slider input[type="range"],
+.feature-slider input[type="range"],
+input[type="range"].prediction-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track,
+.prediction-slider input[type="range"]::-webkit-slider-track,
+.feature-slider input[type="range"]::-webkit-slider-track,
+input[type="range"].prediction-slider::-webkit-slider-track {
+  background: #000000 !important;
   height: 10px;
   border-radius: 5px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -32,8 +45,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
-input[type="range"]::-moz-range-track {
-  background: #374151;
+input[type="range"]::-moz-range-track,
+.prediction-slider input[type="range"]::-moz-range-track,
+.feature-slider input[type="range"]::-moz-range-track,
+input[type="range"].prediction-slider::-moz-range-track {
+  background: #000000 !important;
   height: 10px;
   border-radius: 5px;
   border: none;
@@ -162,6 +178,7 @@ input[type="range"]::-moz-range-thumb:hover {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
+  color: #1f2937;
 }
 
 .header-text p {

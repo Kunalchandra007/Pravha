@@ -77,8 +77,7 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
           case error.POSITION_UNAVAILABLE:
             errorMessage = 'Location information is unavailable';
             break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
+          case error.TIMEOUT:            errorMessage = 'Location request timed out';
             break;
         }
         setLocationError(errorMessage);
@@ -126,30 +125,37 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
     setIsSubmitting(true);
 
     try {
+      const token = localStorage.getItem('auth_token');
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+      
+      if (!token || !userData.id) {
+        alert('Please log in to send SOS request');
+        return;
+      }
+
       const sosRequest = {
         location: currentLocation,
-        message: sosMessage,
-        emergencyType: emergencyType,
-        user_id: user.id
+        message: sosMessage || 'Emergency assistance needed',
+        emergency_type: emergencyType,
+        user_id: userData.id
       };
 
+      console.log('Sending SOS request:', sosRequest);
+
       // Send to the backend
-      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8002/sos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...sosRequest,
-          user_id: user.id
-        }),
+        body: JSON.stringify(sosRequest),
       });
 
       if (response.ok) {
         const result = await response.json();
-        alert(`🚨 Emergency SOS sent successfully!\n\nRequest ID: ${result.id}\nResponse time: ${result.responseTime || 'TBD'} minutes\n\nEmergency services have been notified and are on their way.`);
+        console.log('SOS request sent successfully:', result);
+        alert(`🚨 Emergency SOS sent successfully!\n\nRequest ID: ${result.sos?.id || 'N/A'}\nLocation: ${currentLocation[0].toFixed(4)}, ${currentLocation[1].toFixed(4)}\n\nEmergency services have been notified and are on their way.`);
         
         // Reset form
         setSosMessage('');
@@ -158,11 +164,14 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
         // Refresh history
         fetchSOSHistory();
       } else {
-        throw new Error('Failed to send SOS request');
+        const error = await response.json();
+        console.error('SOS request failed:', error);
+        throw new Error(error.detail || 'Failed to send SOS request');
       }
     } catch (error) {
       console.error('SOS request failed:', error);
-      alert('❌ Failed to send emergency SOS. Please try again or contact emergency services directly at 112.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`❌ Failed to send emergency SOS: ${errorMessage}\n\nPlease try again or contact emergency services directly at 112.`);
     } finally {
       setIsSubmitting(false);
     }

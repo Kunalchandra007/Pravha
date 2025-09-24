@@ -65,7 +65,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
           livesSaved: Math.floor(targets.livesSaved * easeOut),
           alertsSent: Math.floor(targets.alertsSent * easeOut),
           coverage: Math.floor(targets.coverage * easeOut),
-          accuracy: Math.floor(targets.accuracy * easeOut)
+          accuracy: Math.round(targets.accuracy * easeOut * 10) / 10
         });
 
         if (step >= steps) {

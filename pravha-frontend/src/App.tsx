@@ -135,9 +135,23 @@ function App() {
     setError(null);
     
     // Store the current prediction location
+    let predictionCoords: [number, number] | null = null;
+    
     if (userLocation) {
-      setPredictionLocation(userLocation);
-      console.log('Using location for prediction:', userLocation, 'Location string:', location);
+      predictionCoords = userLocation;
+      console.log('Using user location for prediction:', userLocation);
+    } else if (location && location.includes(',')) {
+      // Parse location string to coordinates
+      const coords = location.split(',').map(c => parseFloat(c.trim()));
+      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+        predictionCoords = [coords[0], coords[1]];
+        console.log('Using parsed location string for prediction:', predictionCoords);
+      }
+    }
+    
+    if (predictionCoords) {
+      setPredictionLocation(predictionCoords);
+      console.log('Prediction location set:', predictionCoords);
     }
     
     try {
@@ -176,6 +190,12 @@ function App() {
       const data: PredictionResponse = await response.json();
       console.log('Prediction response:', data);
       setPrediction(data);
+      
+      // Automatically open GIS map to show prediction location
+      if (predictionCoords) {
+        console.log('🎯 Opening GIS map to show prediction location:', predictionCoords);
+        setCurrentView('gis' as ViewType);
+      }
     } catch (err) {
       console.error('Prediction error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');

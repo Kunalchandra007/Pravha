@@ -144,44 +144,143 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 ### **Quick Setup**
 
 #### **1. Install Dependencies**
-```bash
-# Python dependencies
-cd "/Users/parir/SIH FINALLL/Pravha"
-pip3 install -r requirements_mongodb.txt --break-system-packages
 
-# Node.js dependencies
+**Backend Dependencies:**
+```bash
+cd "/Users/parir/SIH FINALLL/Pravha/backend"
+pip3 install -r requirements_mongodb.txt --break-system-packages
+```
+
+**Frontend Dependencies:**
+```bash
 cd "/Users/parir/SIH FINALLL/Pravha/pravha-frontend"
 npm install
 ```
 
 #### **2. Start MongoDB**
+
+**Option A - Using installed MongoDB:**
 ```bash
-mongod --fork --logpath /var/log/mongodb.log
+/Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
+```
+
+**Option B - Using Homebrew (if installed):**
+```bash
+brew services start mongodb-community
+```
+
+**Option C - Using system MongoDB:**
+```bash
+mongod --dbpath /data/db
 ```
 
 #### **3. Run the Application**
 
-**Terminal 1 - Backend:**
+**Terminal 1 - Backend Server:**
 ```bash
 cd "/Users/parir/SIH FINALLL/Pravha/backend"
 python3 app_with_mongodb.py
 ```
 
-**Terminal 2 - Frontend:**
+**Terminal 2 - Frontend Development Server:**
 ```bash
 cd "/Users/parir/SIH FINALLL/Pravha/pravha-frontend"
 npm start
 ```
 
-#### **4. Access the System**
+#### **4. Verify Installation**
+
+**Check Backend Health:**
+```bash
+curl http://localhost:8002/health
+```
+
+**Expected Response:**
+```json
+{
+  "status": "healthy",
+  "model_loaded": true,
+  "database": {
+    "status": "healthy",
+    "database": "pravha_flood_management"
+  }
+}
+```
+
+**Check Frontend:**
+- Open browser to http://localhost:3000
+- Should see Pravha landing page
+
+#### **5. Access the System**
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:8002
 - **Health Check**: http://localhost:8002/health
-- **API Docs**: http://localhost:8002/docs
+- **API Documentation**: http://localhost:8002/docs
+
+### **Troubleshooting Startup Issues**
+
+#### **MongoDB Connection Failed**
+```bash
+# Check if MongoDB is running
+ps aux | grep mongod
+
+# Start MongoDB manually
+mkdir -p /Users/parir/mongodb-data
+/Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
+```
+
+#### **Python Dependencies Missing**
+```bash
+# Install with system packages flag
+pip3 install -r requirements_mongodb.txt --break-system-packages
+
+# Or use virtual environment
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements_mongodb.txt
+```
+
+#### **Frontend Build Errors**
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Delete node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+#### **Port Already in Use**
+```bash
+# Check what's using port 8002
+lsof -i :8002
+
+# Kill the process
+kill -9 <PID>
+
+# Check what's using port 3000
+lsof -i :3000
+```
 
 ### **Login Credentials**
-- **Admin**: `admin@pravha.gov.in` / `admin123`
-- **User**: `user@pravha.gov.in` / `user123`
+
+#### **Admin Account**
+- **Email**: `admin@pravha.gov.in`
+- **Password**: `admin123`
+- **Role**: Administrator
+- **Access**: Full system control, SOS management, alert broadcasting
+
+#### **Regular User Account**
+- **Email**: `user@pravha.com`
+- **Password**: `user12345`
+- **Role**: Citizen
+- **Access**: Risk assessment, shelter finder, SOS requests
+
+#### **Alternative Admin Account**
+- **Email**: `admin@pravaha.com`
+- **Password**: `admin12345`
+- **Role**: Administrator
+- **Access**: Full system control
 
 ## 🔧 System Architecture
 
@@ -503,10 +602,13 @@ curl http://localhost:8002/alerts/history
 
 ### **Start Everything**
 ```bash
-# Terminal 1 - Backend
+# Terminal 1 - Start MongoDB
+/Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
+
+# Terminal 2 - Backend
 cd "/Users/parir/SIH FINALLL/Pravha/backend" && python3 app_with_mongodb.py
 
-# Terminal 2 - Frontend
+# Terminal 3 - Frontend
 cd "/Users/parir/SIH FINALLL/Pravha/pravha-frontend" && npm start
 ```
 
@@ -519,6 +621,22 @@ curl http://localhost:8002/health
 curl -X POST "http://localhost:8002/predict" \
      -H "Content-Type: application/json" \
      -d '{"features": [6,4,3,7,8,6,3,6,5,7,3,4,6,5,6,7,8,3,6,4]}'
+
+# Check users in database
+curl http://localhost:8002/debug/users
+```
+
+### **Login Test**
+```bash
+# Test admin login
+curl -X POST "http://localhost:8002/auth/login" \
+     -H "Content-Type: application/json" \
+     -d '{"email": "admin@pravha.gov.in", "password": "admin123", "role": "admin"}'
+
+# Test user login
+curl -X POST "http://localhost:8002/auth/login" \
+     -H "Content-Type: application/json" \
+     -d '{"email": "user@pravha.com", "password": "user12345", "role": "user"}'
 ```
 
 ### **Access Points**
@@ -526,6 +644,7 @@ curl -X POST "http://localhost:8002/predict" \
 - **Backend API**: http://localhost:8002
 - **API Documentation**: http://localhost:8002/docs
 - **Health Check**: http://localhost:8002/health
+- **Debug Users**: http://localhost:8002/debug/users
 
 ---
 

@@ -103,28 +103,76 @@ async def initialize_database():
                     "name": "Central Community Center",
                     "address": "123 Main Street, City Center, New Delhi",
                     "location": [28.6139, 77.2090],
+                    "coordinates": [28.6139, 77.2090],
+                    "latitude": 28.6139,
+                    "longitude": 77.2090,
                     "capacity": 200,
+                    "current_occupancy": 45,
                     "contact": "John Manager",
                     "phone": "+91-11-2345-0123",
-                    "facilities": ["Food", "Water", "Medical", "Family-Friendly"]
+                    "facilities": ["Food", "Water", "Medical", "Family-Friendly"],
+                    "status": "AVAILABLE",
+                    "accessibility": True
                 },
                 {
                     "name": "Sports Complex Shelter",
                     "address": "456 Sports Ave, North District, New Delhi",
                     "location": [28.6500, 77.2500],
+                    "coordinates": [28.6500, 77.2500],
+                    "latitude": 28.6500,
+                    "longitude": 77.2500,
                     "capacity": 500,
+                    "current_occupancy": 120,
                     "contact": "Sarah Director",
                     "phone": "+91-11-2345-0456",
-                    "facilities": ["Food", "Water", "Pet-Friendly"]
+                    "facilities": ["Food", "Water", "Pet-Friendly"],
+                    "status": "AVAILABLE",
+                    "accessibility": True
                 },
                 {
                     "name": "School Emergency Shelter",
                     "address": "789 Education Blvd, South Area, New Delhi",
                     "location": [28.5800, 77.1800],
+                    "coordinates": [28.5800, 77.1800],
+                    "latitude": 28.5800,
+                    "longitude": 77.1800,
                     "capacity": 150,
+                    "current_occupancy": 30,
                     "contact": "Mike Principal",
                     "phone": "+91-11-2345-0789",
-                    "facilities": ["Food", "Water", "Family-Friendly"]
+                    "facilities": ["Food", "Water", "Family-Friendly"],
+                    "status": "AVAILABLE",
+                    "accessibility": True
+                },
+                {
+                    "name": "Community Relief Center",
+                    "address": "Connaught Place, New Delhi",
+                    "location": [28.6315, 77.2167],
+                    "coordinates": [28.6315, 77.2167],
+                    "latitude": 28.6315,
+                    "longitude": 77.2167,
+                    "capacity": 150,
+                    "current_occupancy": 80,
+                    "contact": "Emergency Coordinator",
+                    "phone": "+91-11-2345-0900",
+                    "facilities": ["Food", "Water", "First Aid"],
+                    "status": "AVAILABLE",
+                    "accessibility": True
+                },
+                {
+                    "name": "Flood Relief Camp",
+                    "address": "India Gate Area, New Delhi",
+                    "location": [28.6129, 77.2295],
+                    "coordinates": [28.6129, 77.2295],
+                    "latitude": 28.6129,
+                    "longitude": 77.2295,
+                    "capacity": 300,
+                    "current_occupancy": 120,
+                    "contact": "Relief Coordinator",
+                    "phone": "+91-11-2345-0901",
+                    "facilities": ["Food", "Water", "Medical", "Transport"],
+                    "status": "AVAILABLE",
+                    "accessibility": True
                 }
             ]
             

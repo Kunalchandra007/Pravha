@@ -53,7 +53,7 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     is_active: bool = True
-    registered_at: datetime = Field(default_factory=datetime.utcnow)
+    registered_at: datetime = Field(default_factory=datetime.now)
     last_login: Optional[datetime] = None
     password_hash: str
 
@@ -85,7 +85,7 @@ class AlertUpdate(BaseModel):
 
 class Alert(AlertBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now)
     status: str = "ACTIVE"
     resolved_at: Optional[datetime] = None
     created_by: Optional[str] = None
@@ -118,7 +118,7 @@ class SOSRequestUpdate(BaseModel):
 class SOSRequest(SOSRequestBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now)
     status: SOSStatus = SOSStatus.PENDING
     assigned_officer: Optional[str] = Field(None, max_length=100)
     response_time: Optional[int] = None  # in minutes
@@ -163,8 +163,8 @@ class Shelter(ShelterBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     current_occupancy: int = 0
     status: ShelterStatus = ShelterStatus.READY
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
     class Config:
         from_attributes = True
@@ -190,8 +190,8 @@ class SensorDataCreate(SensorDataBase):
 
 class SensorData(SensorDataBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    last_reading: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_reading: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
 
     class Config:
         from_attributes = True
@@ -214,8 +214,8 @@ class FloodRiskZoneCreate(FloodRiskZoneBase):
 
 class FloodRiskZone(FloodRiskZoneBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_updated: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.now)
 
     class Config:
         from_attributes = True
@@ -252,7 +252,7 @@ class SystemStats(BaseModel):
     pending_sos_requests: int
     total_shelters: int
     available_shelters: int
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
+    last_updated: datetime = Field(default_factory=datetime.now)
 
 class UserStats(BaseModel):
     user_id: str
@@ -274,7 +274,7 @@ class NotificationCreate(NotificationBase):
 class Notification(NotificationBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now)
     is_read: bool = False
     read_at: Optional[datetime] = None
 
