@@ -147,44 +147,26 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 
 **Backend Dependencies:**
 ```bash
-cd "/Users/parir/SIH FINALLL/Pravha/backend"
-pip3 install -r requirements_mongodb.txt --break-system-packages
+pip install -r requirements_mongodb.txt 
 ```
 
 **Frontend Dependencies:**
 ```bash
-cd "/Users/parir/SIH FINALLL/Pravha/pravha-frontend"
+cd "/Users/kunal/SIH FINALLL/Pravha/pravha-frontend"
 npm install
 ```
 
-#### **2. Start MongoDB**
-
-**Option A - Using installed MongoDB:**
-```bash
-/Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
-```
-
-**Option B - Using Homebrew (if installed):**
-```bash
-brew services start mongodb-community
-```
-
-**Option C - Using system MongoDB:**
-```bash
-mongod --dbpath /data/db
-```
-
-#### **3. Run the Application**
+#### **2. Run the Application**
 
 **Terminal 1 - Backend Server:**
 ```bash
-cd "/Users/parir/SIH FINALLL/Pravha/backend"
+cd "/Users/kunal/SIH FINALLL/Pravha/backend"
 python3 app_with_mongodb.py
 ```
 
 **Terminal 2 - Frontend Development Server:**
 ```bash
-cd "/Users/parir/SIH FINALLL/Pravha/pravha-frontend"
+cd "/Users/kunal/SIH FINALLL/Pravha/pravha-frontend"
 npm start
 ```
 
@@ -216,39 +198,6 @@ curl http://localhost:8002/health
 - **Backend API**: http://localhost:8002
 - **Health Check**: http://localhost:8002/health
 - **API Documentation**: http://localhost:8002/docs
-
-### **Troubleshooting Startup Issues**
-
-#### **MongoDB Connection Failed**
-```bash
-# Check if MongoDB is running
-ps aux | grep mongod
-
-# Start MongoDB manually
-mkdir -p /Users/parir/mongodb-data
-/Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
-```
-
-#### **Python Dependencies Missing**
-```bash
-# Install with system packages flag
-pip3 install -r requirements_mongodb.txt --break-system-packages
-
-# Or use virtual environment
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements_mongodb.txt
-```
-
-#### **Frontend Build Errors**
-```bash
-# Clear npm cache
-npm cache clean --force
-
-# Delete node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
 
 #### **Port Already in Use**
 ```bash
