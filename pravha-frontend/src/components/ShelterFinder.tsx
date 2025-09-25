@@ -435,13 +435,37 @@ const ShelterFinder: React.FC<ShelterFinderProps> = ({ user, onBack }) => {
                             <div 
                               className="capacity-fill"
                               style={{ 
-                                width: `${getOccupancyPercentage(shelter.currentOccupancy, shelter.capacity)}%`,
-                                backgroundColor: getOccupancyColor(getOccupancyPercentage(shelter.currentOccupancy, shelter.capacity))
+                                width: `${(() => {
+                                  const totalCapacity = typeof shelter.capacity === 'object' 
+                                    ? (shelter.capacity as any)?.total_capacity 
+                                    : shelter.capacity;
+                                  const currentOccupancy = typeof shelter.capacity === 'object' 
+                                    ? (shelter.capacity as any)?.current_occupancy 
+                                    : shelter.currentOccupancy;
+                                  return getOccupancyPercentage(currentOccupancy || 0, totalCapacity || 1);
+                                })()}%`,
+                                backgroundColor: getOccupancyColor((() => {
+                                  const totalCapacity = typeof shelter.capacity === 'object' 
+                                    ? (shelter.capacity as any)?.total_capacity 
+                                    : shelter.capacity;
+                                  const currentOccupancy = typeof shelter.capacity === 'object' 
+                                    ? (shelter.capacity as any)?.current_occupancy 
+                                    : shelter.currentOccupancy;
+                                  return getOccupancyPercentage(currentOccupancy || 0, totalCapacity || 1);
+                                })())
                               }}
                             ></div>
                           </div>
                           <div className="capacity-text">
-                            {shelter.currentOccupancy} / {shelter.capacity} people
+                            {(() => {
+                              const totalCapacity = typeof shelter.capacity === 'object' 
+                                ? (shelter.capacity as any)?.total_capacity 
+                                : shelter.capacity;
+                              const currentOccupancy = typeof shelter.capacity === 'object' 
+                                ? (shelter.capacity as any)?.current_occupancy 
+                                : shelter.currentOccupancy;
+                              return `${currentOccupancy || 0} / ${totalCapacity || 'N/A'} people`;
+                            })()}
                           </div>
                         </div>
                       </div>
@@ -555,13 +579,37 @@ const ShelterFinder: React.FC<ShelterFinderProps> = ({ user, onBack }) => {
               
               <div className="modal-section">
                 <h3>👥 Capacity</h3>
-                <p>{selectedShelter.currentOccupancy} / {selectedShelter.capacity} people</p>
+                <p>{(() => {
+                  const totalCapacity = typeof selectedShelter.capacity === 'object' 
+                    ? (selectedShelter.capacity as any)?.total_capacity 
+                    : selectedShelter.capacity;
+                  const currentOccupancy = typeof selectedShelter.capacity === 'object' 
+                    ? (selectedShelter.capacity as any)?.current_occupancy 
+                    : selectedShelter.currentOccupancy;
+                  return `${currentOccupancy || 0} / ${totalCapacity || 'N/A'} people`;
+                })()}</p>
                 <div className="capacity-bar">
                   <div 
                     className="capacity-fill"
                     style={{ 
-                      width: `${getOccupancyPercentage(selectedShelter.currentOccupancy, selectedShelter.capacity)}%`,
-                      backgroundColor: getOccupancyColor(getOccupancyPercentage(selectedShelter.currentOccupancy, selectedShelter.capacity))
+                      width: `${(() => {
+                        const totalCapacity = typeof selectedShelter.capacity === 'object' 
+                          ? (selectedShelter.capacity as any)?.total_capacity 
+                          : selectedShelter.capacity;
+                        const currentOccupancy = typeof selectedShelter.capacity === 'object' 
+                          ? (selectedShelter.capacity as any)?.current_occupancy 
+                          : selectedShelter.currentOccupancy;
+                        return getOccupancyPercentage(currentOccupancy || 0, totalCapacity || 1);
+                      })()}%`,
+                      backgroundColor: getOccupancyColor((() => {
+                        const totalCapacity = typeof selectedShelter.capacity === 'object' 
+                          ? (selectedShelter.capacity as any)?.total_capacity 
+                          : selectedShelter.capacity;
+                        const currentOccupancy = typeof selectedShelter.capacity === 'object' 
+                          ? (selectedShelter.capacity as any)?.current_occupancy 
+                          : selectedShelter.currentOccupancy;
+                        return getOccupancyPercentage(currentOccupancy || 0, totalCapacity || 1);
+                      })())
                     }}
                   ></div>
                 </div>

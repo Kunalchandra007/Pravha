@@ -1909,13 +1909,28 @@ const AdminPanel = ({ user, onBack }: {
                         </div>
                         <div className="shelter-info-item">
                           <span className="info-label">👥 Capacity:</span>
-                          <span className="info-value">{shelter.capacity || 'N/A'} people</span>
+                          <span className="info-value">
+                            {typeof shelter.capacity === 'object' 
+                              ? shelter.capacity?.total_capacity || 'N/A'
+                              : shelter.capacity || 'N/A'
+                            } people
+                          </span>
                         </div>
                         <div className="shelter-info-item">
                           <span className="info-label">📊 Occupancy:</span>
                           <span className="info-value">
-                            {shelter.current_occupancy || 0}/{shelter.capacity || 'N/A'}
-                            {shelter.capacity ? ` (${(((shelter.current_occupancy || 0) / shelter.capacity) * 100).toFixed(0)}%)` : ''}
+                            {(() => {
+                              const totalCapacity = typeof shelter.capacity === 'object' 
+                                ? shelter.capacity?.total_capacity 
+                                : shelter.capacity;
+                              const currentOccupancy = typeof shelter.capacity === 'object' 
+                                ? shelter.capacity?.current_occupancy 
+                                : shelter.current_occupancy;
+                              
+                              return `${currentOccupancy || 0}/${totalCapacity || 'N/A'}${
+                                totalCapacity ? ` (${(((currentOccupancy || 0) / totalCapacity) * 100).toFixed(0)}%)` : ''
+                              }`;
+                            })()}
                           </span>
                         </div>
                         <div className="shelter-info-item">

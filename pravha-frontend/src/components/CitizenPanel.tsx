@@ -555,8 +555,18 @@ const CitizenPanel = ({ user, onBack }: {
                 <p className="shelter-address">📍 {shelter.address}</p>
                 <p className="shelter-distance">🚶 {shelter.distance}km away</p>
                 <p className="shelter-capacity">
-                  👥 {shelter.current_occupancy}/{shelter.capacity} occupied 
-                  ({((shelter.current_occupancy / shelter.capacity) * 100).toFixed(0)}%)
+                  👥 {(() => {
+                    const totalCapacity = typeof shelter.capacity === 'object' 
+                      ? (shelter.capacity as any)?.total_capacity 
+                      : shelter.capacity;
+                    const currentOccupancy = typeof shelter.capacity === 'object' 
+                      ? (shelter.capacity as any)?.current_occupancy 
+                      : shelter.current_occupancy;
+                    
+                    return `${currentOccupancy || 0}/${totalCapacity || 'N/A'} occupied${
+                      totalCapacity ? ` (${(((currentOccupancy || 0) / totalCapacity) * 100).toFixed(0)}%)` : ''
+                    }`;
+                  })()}
                 </p>
                 <p className="shelter-contact">📞 {shelter.phone}</p>
                 <p className="shelter-manager">👤 Contact: {shelter.contact}</p>

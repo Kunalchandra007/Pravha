@@ -1247,7 +1247,15 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                         marginTop: '8px'
                       }}>
                         <span>📍 {formatCoordinates(shelter.coordinates)}</span>
-                        <span>{shelter.currentOccupancy}/{shelter.capacity} people</span>
+                        <span>{(() => {
+                          const totalCapacity = typeof shelter.capacity === 'object' 
+                            ? (shelter.capacity as any)?.total_capacity 
+                            : shelter.capacity;
+                          const currentOccupancy = typeof shelter.capacity === 'object' 
+                            ? (shelter.capacity as any)?.current_occupancy 
+                            : shelter.currentOccupancy;
+                          return `${currentOccupancy || 0}/${totalCapacity || 'N/A'} people`;
+                        })()}</span>
                       </div>
 
                       <div style={{ marginTop: '10px' }}>
@@ -1614,7 +1622,15 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
                   marginTop: '12px'
                 }}>
                   <p style={{ margin: '0', fontSize: '12px', color: '#6b7280' }}>
-                    <strong>Capacity:</strong> {shelter.currentOccupancy}/{shelter.capacity} people
+                    <strong>Capacity:</strong> {(() => {
+                      const totalCapacity = typeof shelter.capacity === 'object' 
+                        ? (shelter.capacity as any)?.total_capacity 
+                        : shelter.capacity;
+                      const currentOccupancy = typeof shelter.capacity === 'object' 
+                        ? (shelter.capacity as any)?.current_occupancy 
+                        : shelter.currentOccupancy;
+                      return `${currentOccupancy || 0}/${totalCapacity || 'N/A'} people`;
+                    })()}
                   </p>
                   <p style={{ margin: '4px 0', fontSize: '12px', color: '#6b7280' }}>
                     <strong>Contact:</strong> {shelter.contact}
