@@ -597,7 +597,7 @@ curl -X POST "http://localhost:8002/auth/login" \
 
 ---
 
-**Pravha - Saving Lives Through AI-Powered Flood Management** 🌊🤖🆘
+**Pravha - Saving Lives Through AI-Powered Flood Management** 🌊🆘
 ### Made with ❤️
 
 *Ready to revolutionize flood management with cutting-edge AI technology!*
