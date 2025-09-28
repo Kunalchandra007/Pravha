@@ -1,0 +1,3 @@
+# Railway configuration - Force start command
+[start]
+cmd = "cd backend && python app.py"
