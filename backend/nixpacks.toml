@@ -9,4 +9,4 @@ cmds = ["pip install -r requirements_mongodb.txt"]
 cmds = ["echo 'Build phase completed'"]
 
 [start]
-cmd = "python app_with_mongodb.py"
+cmd = "uvicorn app_with_mongodb:app --host 0.0.0.0 --port $PORT"

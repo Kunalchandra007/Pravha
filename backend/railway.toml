@@ -4,7 +4,7 @@ builder = "nixpacks"
 buildCommand = "pip install -r requirements_mongodb.txt"
 
 [deploy]
-startCommand = "python app_with_mongodb.py"
+startCommand = "uvicorn app_with_mongodb:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
