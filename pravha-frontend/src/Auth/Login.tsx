@@ -22,10 +22,89 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Test credentials for bypass authentication
+  const TEST_CREDENTIALS = {
+    user: {
+      email: 'user@pravha.com',
+      password: 'user12345',
+      role: 'user'
+    },
+    admin: {
+      email: 'admin@pravaha.com',
+      password: 'admin123',
+      role: 'admin'
+    }
+  };
+
+  // Check if credentials match test credentials
+  const isTestCredentials = (email: string, password: string, role: string) => {
+    const testCred = TEST_CREDENTIALS[role as keyof typeof TEST_CREDENTIALS];
+    return testCred && testCred.email === email && testCred.password === password;
+  };
+
+  // Bypass authentication for test credentials
+  const handleTestLogin = (role: 'user' | 'admin') => {
+    const testUser = {
+      id: role === 'admin' ? 'admin-test-id' : 'user-test-id',
+      email: TEST_CREDENTIALS[role].email,
+      role: role,
+      name: role === 'admin' ? 'Test Admin' : 'Test User',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      last_login: new Date().toISOString()
+    };
+
+    // Create mock tokens for test login
+    const mockTokenData = {
+      access_token: `test-${role}-token-${Date.now()}`,
+      refresh_token: `test-${role}-refresh-${Date.now()}`,
+      user: testUser,
+      expires_in: 3600
+    };
+
+    // Store tokens using TokenManager
+    TokenManager.setTokens(
+      mockTokenData.access_token,
+      mockTokenData.refresh_token,
+      mockTokenData.user,
+      mockTokenData.expires_in
+    );
+
+    console.log(`🎭 Bypass authentication successful for ${role} role`);
+    onLogin(testUser);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Check if test credentials are being used
+    if (isTestCredentials(formData.email, formData.password, formData.role)) {
+      console.log('🎭 Test credentials detected - bypassing authentication');
+      setLoading(false);
+      handleTestLogin(formData.role);
+      return;
+    }
+
+    // Debug: Log the API URL being used
+    console.log('🔍 API URL being used:', API_ENDPOINTS.AUTH.LOGIN);
+    console.log('🔍 Environment variable:', process.env.REACT_APP_API_URL);
+
+    // Test Railway backend health first
+    try {
+      console.log('🏥 Testing Railway backend health...');
+      const healthResponse = await fetch('https://pravha-production.up.railway.app/health');
+      console.log('🏥 Health check response:', healthResponse.status);
+      if (!healthResponse.ok) {
+        throw new Error(`Railway backend health check failed: ${healthResponse.status}`);
+      }
+    } catch (healthError) {
+      console.error('🏥 Railway backend health check failed:', healthError);
+      setError(`Railway backend is not responding. Please check if it's running. Error: ${healthError.message}`);
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
@@ -113,11 +192,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
                   <button 
                     type="button" 
                     className="demo-button"
-                    onClick={() => setFormData({
-                      email: 'user@pravha.com',
-                      password: 'user12345',
-                      role: 'user'
-                    })}
+                    onClick={() => {
+                      setFormData({
+                        email: 'user@pravha.com',
+                        password: 'user12345',
+                        role: 'user'
+                      });
+                      // Direct bypass login for demo
+                      handleTestLogin('user');
+                    }}
                   >
                     Use Citizen Credentials
                   </button>
@@ -129,11 +212,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
                   <button 
                     type="button" 
                     className="demo-button admin"
-                    onClick={() => setFormData({
-                      email: 'admin@pravaha.com',
-                      password: 'admin123',
-                      role: 'admin'
-                    })}
+                    onClick={() => {
+                      setFormData({
+                        email: 'admin@pravaha.com',
+                        password: 'admin123',
+                        role: 'admin'
+                      });
+                      // Direct bypass login for demo
+                      handleTestLogin('admin');
+                    }}
                   >
                     Use Admin Credentials
                   </button>
