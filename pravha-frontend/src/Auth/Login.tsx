@@ -101,6 +101,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
       }
     } catch (healthError) {
       console.error('🏥 Railway backend health check failed:', healthError);
+      // TypeScript-safe error handling for unknown error type
       const errorMessage = healthError instanceof Error ? healthError.message : String(healthError);
       setError(`Railway backend is not responding. Please check if it's running. Error: ${errorMessage}`);
       setLoading(false);
