@@ -736,10 +736,12 @@ async def broadcast_manual_alert(
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8002))
     uvicorn.run(
         "app_with_mongodb:app",
         host="0.0.0.0",
-        port=8002,
-        reload=True,
+        port=port,
+        reload=False,  # Disable reload in production
         log_level="info"
     )
