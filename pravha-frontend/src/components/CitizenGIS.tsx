@@ -5,6 +5,9 @@ import 'leaflet/dist/leaflet.css';
 import { generateDemoShelters, generateDemoAlerts, getStateFromCoordinates } from '../data/demoData';
 import { apiRequest } from '../utils/tokenManager';
 
+// API Configuration - Inline to avoid import issues
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -136,7 +139,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
         setLoading(true);
         
         // Fetch alerts
-        const alertsResponse = await apiRequest('http://localhost:8002/alerts/active');
+        const alertsResponse = await apiRequest(`${API_BASE_URL}/alerts/active`);
 
         if (alertsResponse.ok) {
           const alertsData = await alertsResponse.json();
@@ -213,7 +216,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           
           // Fetch real shelters from backend
           try {
-            const sheltersResponse = await apiRequest('http://localhost:8002/shelters');
+            const sheltersResponse = await apiRequest(`${API_BASE_URL}/shelters`);
             
             if (sheltersResponse.ok) {
               const sheltersData = await sheltersResponse.json();

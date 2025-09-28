@@ -5,6 +5,9 @@ import 'leaflet/dist/leaflet.css';
 import { generateDemoShelters, generateDemoAlerts, generateDemoSOS, getStateFromCoordinates } from '../data/demoData';
 import { apiRequest } from '../utils/tokenManager';
 
+// API Configuration - Inline to avoid import issues
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -189,7 +192,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         setLoading(true);
         
         // Fetch alerts
-        const alertsResponse = await apiRequest('http://localhost:8002/alerts/active');
+        const alertsResponse = await apiRequest(`${API_BASE_URL}/alerts/active`);
 
         if (alertsResponse.ok) {
           const alertsData = await alertsResponse.json();
@@ -263,7 +266,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         }
 
         // Fetch SOS requests
-        const sosResponse = await apiRequest('http://localhost:8002/admin/sos-requests?status=PENDING');
+        const sosResponse = await apiRequest(`${API_BASE_URL}/admin/sos-requests?status=PENDING`);
 
         if (sosResponse.ok) {
           const sosData = await sosResponse.json();
@@ -301,7 +304,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         }
 
         // Fetch shelters
-        const sheltersResponse = await apiRequest('http://localhost:8002/shelters');
+        const sheltersResponse = await apiRequest(`${API_BASE_URL}/shelters`);
 
         if (sheltersResponse.ok) {
           const sheltersData = await sheltersResponse.json();
@@ -439,7 +442,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
   const handleCloseAlert = async (alertId: string) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`http://localhost:8002/alerts/${alertId}/status?status=RESOLVED&resolution_notes=Alert closed by admin`, {
+      const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/status?status=RESOLVED&resolution_notes=Alert closed by admin`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -474,7 +477,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         longitude: parseFloat(newShelter.longitude)
       };
 
-      const response = await apiRequest('http://localhost:8002/shelters', {
+      const response = await apiRequest(`${API_BASE_URL}/shelters`, {
         method: 'POST',
         body: JSON.stringify(shelterData)
       });
@@ -492,7 +495,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
           longitude: ''
         });
         // Refresh shelters
-        const sheltersResponse = await apiRequest('http://localhost:8002/shelters');
+        const sheltersResponse = await apiRequest(`${API_BASE_URL}/shelters`);
         if (sheltersResponse.ok) {
           const sheltersData = await sheltersResponse.json();
           const transformedShelters = (sheltersData.shelters || []).map((shelter: any) => ({
@@ -517,7 +520,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
     if (!window.confirm('Are you sure you want to delete this shelter?')) return;
     
     try {
-      const response = await apiRequest(`http://localhost:8002/shelters/${shelterId}`, {
+      const response = await apiRequest(`${API_BASE_URL}/shelters/${shelterId}`, {
         method: 'DELETE',
       });
 
@@ -537,7 +540,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
 
   const handleUpdateSOS = async (sosId: string, status: string) => {
     try {
-      const response = await apiRequest(`http://localhost:8002/admin/sos-requests/${sosId}`, {
+      const response = await apiRequest(`${API_BASE_URL}/admin/sos-requests/${sosId}`, {
         method: 'PUT',
         body: JSON.stringify({ status })
       });
