@@ -2,7 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { API_ENDPOINTS } from '../config/api';
+// API Configuration - Inline to avoid import issues
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+
+const API_ENDPOINTS = {
+  GIS: {
+    FLOOD_ZONES: `${API_BASE_URL}/gis/flood-zones`,
+    SENSORS: `${API_BASE_URL}/gis/sensors`,
+    PREDICT_LOCATION: `${API_BASE_URL}/gis/predict-location`,
+  },
+  ADMIN: {
+    SOS_REQUESTS: `${API_BASE_URL}/admin/sos-requests`,
+  },
+};
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;

@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import './Auth.css';
-import { API_ENDPOINTS } from '../config/api';
+// API Configuration - Inline to avoid import issues
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+
+const API_ENDPOINTS = {
+  AUTH: {
+    REGISTER: `${API_BASE_URL}/auth/register`,
+    LOGIN: `${API_BASE_URL}/auth/login`,
+  },
+};
 
 interface SignupProps {
   onSignup: (user: any) => void;

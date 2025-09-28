@@ -1,4 +1,11 @@
-import { API_ENDPOINTS } from '../config/api';
+// API Configuration - Inline to avoid import issues
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+
+const API_ENDPOINTS = {
+  AUTH: {
+    REFRESH: `${API_BASE_URL}/auth/refresh`,
+  },
+};
 
 interface DecodedToken {
   exp: number;
