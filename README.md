@@ -93,11 +93,13 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 - **Database**: MongoDB with connection pooling
 - **Caching**: In-memory translation cache
 - **Monitoring**: Real-time health checks
+- **Containerization**: Docker with multi-service orchestration
+- **Deployment**: Docker Compose for easy setup
 
 ## 📊 Current System Status
 
 ### **✅ Fully Operational**
-- **Backend API**: Running on http://localhost:8002
+- **Backend API**: Running on http://localhost:8000 (Docker) / http://localhost:8002 (Manual)
 - **Frontend App**: Running on http://localhost:3000
 - **Database**: MongoDB connected and indexed
 - **ML Model**: XGBoost loaded and ready
@@ -105,6 +107,7 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 - **Translation**: Survam AI integration active
 - **SOS System**: Emergency requests working
 - **Admin Panel**: Real-time monitoring active
+- **Docker Support**: Full containerized deployment available
 
 ### **📈 Performance Metrics**
 - **Prediction Accuracy**: 86.5%
@@ -136,10 +139,11 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 ## 🚀 Getting Started
 
 ### **Prerequisites**
-- Python 3.13+ installed
+- Python 3.11+ installed
 - Node.js 16+ and npm installed
 - MongoDB running on localhost:27017
 - Git installed
+- Docker Desktop (for containerized deployment)
 
 ### **Quick Setup**
 
@@ -198,6 +202,67 @@ curl http://localhost:8002/health
 - **Backend API**: http://localhost:8002
 - **Health Check**: http://localhost:8002/health
 - **API Documentation**: http://localhost:8002/docs
+
+## 🐳 Docker Deployment (Recommended)
+
+### **Quick Docker Setup**
+
+#### **1. Prerequisites**
+- Docker Desktop installed and running
+- Git installed
+
+#### **2. Clone and Deploy**
+```bash
+# Clone the repository
+git clone https://github.com/your-username/Pravha.git
+cd Pravha
+
+# Build and start all services
+docker-compose up -d
+
+# Check status
+docker-compose ps
+```
+
+#### **3. Access Docker Deployment**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **Health Check**: http://localhost:8000/health
+- **API Documentation**: http://localhost:8000/docs
+
+#### **4. Docker Management Commands**
+```bash
+# View logs
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs mongodb
+
+# Stop all services
+docker-compose down
+
+# Restart a specific service
+docker-compose restart backend
+
+# View running containers
+docker-compose ps
+
+# Rebuild and restart
+docker-compose down
+docker-compose build
+docker-compose up -d
+```
+
+#### **5. Docker Benefits**
+- **Consistent Environment**: Same setup across all machines
+- **Easy Deployment**: One command to start everything
+- **Isolated Services**: Each component runs in its own container
+- **Scalable**: Easy to scale individual services
+- **Portable**: Can run anywhere Docker is installed
+
+### **Docker Services**
+- **MongoDB**: Database with persistent storage
+- **Backend**: FastAPI server with XGBoost ML model
+- **Frontend**: React application with Nginx
 
 #### **Port Already in Use**
 ```bash
@@ -418,6 +483,8 @@ curl -X POST "http://localhost:8002/predict" \
 - User authentication and management
 - Email alert system
 - Location-based intelligence
+- **Docker containerization** with multi-service orchestration
+- **Production-ready deployment** with Docker Compose
 
 ### **🔄 In Progress**
 - Advanced GIS features
@@ -547,9 +614,49 @@ curl http://localhost:8002/alerts/history
 - **GitHub**: [Repository Link]
 - **Documentation**: [Documentation Link]
 
+## 🐳 Docker Files Overview
+
+### **Containerization Setup**
+The project includes complete Docker containerization for easy deployment:
+
+#### **Docker Files**
+- `docker-compose.yml` - Main orchestration file for all services
+- `docker-compose.prod.yml` - Production configuration
+- `backend/Dockerfile` - Backend container configuration
+- `pravha-frontend/Dockerfile` - Frontend container configuration
+- `backend/.dockerignore` - Backend build optimization
+- `pravha-frontend/.dockerignore` - Frontend build optimization
+- `pravha-frontend/nginx.conf` - Nginx configuration for frontend
+- `env.example` - Environment variables template
+
+#### **Services**
+- **MongoDB**: Database with persistent volume
+- **Backend**: FastAPI server with ML model
+- **Frontend**: React app with Nginx
+- **Network**: Isolated Docker network for service communication
+
+#### **Volumes**
+- `mongodb_data` - Persistent MongoDB storage
+- `backend/models` - ML model files (read-only)
+
 ## 🎯 Quick Commands
 
-### **Start Everything**
+### **Docker Commands (Recommended)**
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Rebuild and restart
+docker-compose down && docker-compose up -d --build
+```
+
+### **Manual Setup Commands**
 ```bash
 # Terminal 1 - Start MongoDB
 /Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
@@ -590,10 +697,11 @@ curl -X POST "http://localhost:8002/auth/login" \
 
 ### **Access Points**
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8002
-- **API Documentation**: http://localhost:8002/docs
-- **Health Check**: http://localhost:8002/health
-- **Debug Users**: http://localhost:8002/debug/users
+- **Backend API (Docker)**: http://localhost:8000
+- **Backend API (Manual)**: http://localhost:8002
+- **API Documentation**: http://localhost:8000/docs (Docker) / http://localhost:8002/docs (Manual)
+- **Health Check**: http://localhost:8000/health (Docker) / http://localhost:8002/health (Manual)
+- **Debug Users**: http://localhost:8000/debug/users (Docker) / http://localhost:8002/debug/users (Manual)
 
 ---
 

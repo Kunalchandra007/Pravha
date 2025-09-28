@@ -1,18 +1,13 @@
-# Railway deployment configuration for Pravha Backend
-
+# Railway deployment configuration
 [build]
-builder = "NIXPACKS"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "python3 app_with_mongodb.py"
+startCommand = "python app_with_mongodb.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
-restartPolicyType = "ON_FAILURE"
+restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 
 [env]
-PYTHON_VERSION = "3.13"
-PORT = "8002"
-MONGODB_URL = "${{MONGODB_URL}}"
-SECRET_KEY = "${{SECRET_KEY}}"
-ENVIRONMENT = "production"
+PORT = "8000"
