@@ -138,6 +138,11 @@ Pravha integrates real-time sensor data, machine learning, and GIS technology to
 
 ## 🚀 Getting Started
 
+### **🌐 Live Deployment**
+- **Frontend**: [Vercel Deployment](https://pravha-git-main-kunal-chandras-projects-eb5269db.vercel.app)
+- **Backend**: [Railway Deployment](https://pravha-production.up.railway.app)
+- **API Documentation**: [Railway API Docs](https://pravha-production.up.railway.app/docs)
+
 ### **Prerequisites**
 - Python 3.11+ installed
 - Node.js 16+ and npm installed
@@ -156,7 +161,7 @@ pip install -r requirements_mongodb.txt
 
 **Frontend Dependencies:**
 ```bash
-cd "/Users/kunal/SIH FINALLL/Pravha/pravha-frontend"
+cd pravha-frontend
 npm install
 ```
 
@@ -164,13 +169,13 @@ npm install
 
 **Terminal 1 - Backend Server:**
 ```bash
-cd "/Users/kunal/SIH FINALLL/Pravha/backend"
+cd backend
 python3 app_with_mongodb.py
 ```
 
 **Terminal 2 - Frontend Development Server:**
 ```bash
-cd "/Users/kunal/SIH FINALLL/Pravha/pravha-frontend"
+cd pravha-frontend
 npm start
 ```
 
@@ -278,23 +283,15 @@ lsof -i :3000
 
 ### **Login Credentials**
 
-#### **Admin Account**
-- **Email**: `admin@pravha.gov.in`
-- **Password**: `admin123`
-- **Role**: Administrator
-- **Access**: Full system control, SOS management, alert broadcasting
+#### **🎭 Demo Credentials (Bypass Authentication)**
+- **Citizen User**: `user@pravha.com` / `user12345`
+- **Admin Panel**: `admin@pravaha.com` / `admin123`
+- **Note**: These credentials bypass database authentication for testing purposes
 
-#### **Regular User Account**
-- **Email**: `user@pravha.com`
-- **Password**: `user12345`
-- **Role**: Citizen
-- **Access**: Risk assessment, shelter finder, SOS requests
-
-#### **Alternative Admin Account**
-- **Email**: `admin@pravaha.com`
-- **Password**: `admin12345`
-- **Role**: Administrator
-- **Access**: Full system control
+#### **Production Credentials**
+- **Admin Account**: `admin@pravha.gov.in` / `admin123`
+- **Regular User**: `user@pravha.com` / `user12345`
+- **Alternative Admin**: `admin@pravaha.com` / `admin12345`
 
 ## 🔧 System Architecture
 
@@ -659,13 +656,13 @@ docker-compose down && docker-compose up -d --build
 ### **Manual Setup Commands**
 ```bash
 # Terminal 1 - Start MongoDB
-/Users/parir/mongodb-macos-aarch64-8.0.12/bin/mongod --dbpath /Users/parir/mongodb-data
+mongod --dbpath /path/to/your/mongodb-data
 
 # Terminal 2 - Backend
-cd "/Users/parir/SIH FINALLL/Pravha/backend" && python3 app_with_mongodb.py
+cd backend && python3 app_with_mongodb.py
 
 # Terminal 3 - Frontend
-cd "/Users/parir/SIH FINALLL/Pravha/pravha-frontend" && npm start
+cd pravha-frontend && npm start
 ```
 
 ### **Test System**

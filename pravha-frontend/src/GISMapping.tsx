@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { API_ENDPOINTS } from '../config/api';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -324,16 +325,16 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     const fetchGISData = async () => {
       try {
         // Fetch flood risk zones
-        const zonesResponse = await fetch('http://localhost:8002/gis/flood-zones');
+        const zonesResponse = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/gis/flood-zones`);
         const zonesData = await zonesResponse.json();
 
         // Fetch sensor data
-        const sensorsResponse = await fetch('http://localhost:8002/gis/sensors');
+        const sensorsResponse = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/gis/sensors`);
         const sensorsData = await sensorsResponse.json();
 
         // Fetch SOS requests for admin
         if (user?.role === 'admin') {
-          const sosResponse = await fetch('http://localhost:8002/admin/sos-requests');
+          const sosResponse = await fetch(API_ENDPOINTS.ADMIN.SOS_REQUESTS);
           const sosData = await sosResponse.json();
           setSosRequests(sosData.sos_requests || []);
         }
@@ -388,7 +389,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     
     setIsSendingAlert(true);
     try {
-      const response = await fetch('http://localhost:8002/admin/send-alert', {
+      const response = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/admin/send-alert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -693,7 +694,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
                   onClick={async () => {
                     // Trigger fresh AI prediction for this historical zone
                     try {
-                      const response = await fetch(`http://localhost:8002/gis/predict-location?latitude=${zone.center[0]}&longitude=${zone.center[1]}`, {
+                      const response = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/gis/predict-location?latitude=${zone.center[0]}&longitude=${zone.center[1]}`, {
                         method: 'POST'
                       });
                       const prediction = await response.json();
