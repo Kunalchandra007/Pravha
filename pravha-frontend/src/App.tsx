@@ -13,7 +13,7 @@ import AdminPanel from './components/AdminPanel';
 import CitizenPanel from './components/CitizenPanel';
 import LanguageSelector from './components/LanguageSelector';
 import { TranslationProvider } from './contexts/TranslationContext';
-import { getSurvamApiKey } from './config/api';
+import { getSurvamApiKey, API_ENDPOINTS } from './config/api';
 
 interface PredictionResponse {
   probability: number;
@@ -168,7 +168,7 @@ function App() {
           throw new Error('Authentication token not found. Please log in again.');
         }
 
-        const response = await fetch('http://localhost:8002/predict', {
+        const response = await fetch(API_ENDPOINTS.PREDICTIONS.PREDICT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

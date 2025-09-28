@@ -3,6 +3,7 @@ import './Auth.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
 import { TokenManager } from '../utils/tokenManager';
+import { API_ENDPOINTS } from '../config/api';
 
 interface LoginProps {
   onLogin: (user: any) => void;
@@ -27,7 +28,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8002/auth/login', {
+      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

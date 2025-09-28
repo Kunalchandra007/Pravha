@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Auth.css';
+import { API_ENDPOINTS } from '../config/api';
 
 interface SignupProps {
   onSignup: (user: any) => void;
@@ -50,7 +51,7 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToLand
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8002/auth/register', {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
