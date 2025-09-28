@@ -101,6 +101,45 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
               </div>
             )}
 
+            {/* Demo Credentials Section */}
+            <div className="demo-credentials">
+              <h3 className="demo-title">🧪 Testing Credentials</h3>
+              <div className="demo-accounts">
+                <div className="demo-account">
+                  <h4>👤 Citizen User</h4>
+                  <p><strong>Email:</strong> user@pravha.com</p>
+                  <p><strong>Password:</strong> user12345</p>
+                  <button 
+                    type="button" 
+                    className="demo-button"
+                    onClick={() => setFormData({
+                      email: 'user@pravha.com',
+                      password: 'user12345',
+                      role: 'user'
+                    })}
+                  >
+                    Use Citizen Credentials
+                  </button>
+                </div>
+                <div className="demo-account">
+                  <h4>👨‍💼 Admin Panel</h4>
+                  <p><strong>Email:</strong> admin@pravaha.com</p>
+                  <p><strong>Password:</strong> admin123</p>
+                  <button 
+                    type="button" 
+                    className="demo-button admin"
+                    onClick={() => setFormData({
+                      email: 'admin@pravaha.com',
+                      password: 'admin123',
+                      role: 'admin'
+                    })}
+                  >
+                    Use Admin Credentials
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="form-group">
               <label htmlFor="email" className="form-label">{getTranslatedText('login', 'emailAddress', currentLanguage)}</label>
               <input
