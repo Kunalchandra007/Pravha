@@ -1,6 +1,7 @@
-# Railway deployment configuration
+# Railway deployment configuration for Pravha Backend
 [build]
-builder = "dockerfile"
+builder = "nixpacks"
+buildCommand = "pip install -r requirements_mongodb.txt"
 
 [deploy]
 startCommand = "python app_with_mongodb.py"
