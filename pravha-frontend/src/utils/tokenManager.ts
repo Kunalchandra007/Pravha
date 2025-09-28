@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from '../config/api';
+
 interface DecodedToken {
   exp: number;
   [key: string]: any;
@@ -82,7 +84,7 @@ export class TokenManager {
 
     try {
       console.log('Attempting to refresh access token...');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8002'}/auth/refresh`, {
+      const response = await fetch(API_ENDPOINTS.AUTH.REFRESH, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +168,7 @@ export const apiRequest = async (url: string, options: RequestInit = {}): Promis
   let response = await fetch(url, { ...options, headers });
 
   // If 401 and not a refresh attempt, try to refresh token and retry once
-  if (response.status === 401 && url !== `${process.env.REACT_APP_API_URL || 'http://localhost:8002'}/auth/refresh`) {
+  if (response.status === 401 && url !== API_ENDPOINTS.AUTH.REFRESH) {
     console.log('API request failed with 401. Attempting to refresh token and retry...');
     token = await TokenManager.refreshAccessToken();
     if (token) {

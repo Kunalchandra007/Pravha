@@ -325,18 +325,31 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     const fetchGISData = async () => {
       try {
         // Fetch flood risk zones
-        const zonesResponse = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/gis/flood-zones`);
+        const zonesResponse = await fetch(API_ENDPOINTS.GIS.FLOOD_ZONES);
+        if (!zonesResponse.ok) {
+          console.warn('Failed to fetch flood zones, using fallback data');
+          throw new Error('Flood zones API failed');
+        }
         const zonesData = await zonesResponse.json();
 
         // Fetch sensor data
-        const sensorsResponse = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/gis/sensors`);
+        const sensorsResponse = await fetch(API_ENDPOINTS.GIS.SENSORS);
+        if (!sensorsResponse.ok) {
+          console.warn('Failed to fetch sensor data, using fallback data');
+          throw new Error('Sensors API failed');
+        }
         const sensorsData = await sensorsResponse.json();
 
         // Fetch SOS requests for admin
         if (user?.role === 'admin') {
           const sosResponse = await fetch(API_ENDPOINTS.ADMIN.SOS_REQUESTS);
-          const sosData = await sosResponse.json();
-          setSosRequests(sosData.sos_requests || []);
+          if (sosResponse.ok) {
+            const sosData = await sosResponse.json();
+            setSosRequests(sosData.sos_requests || []);
+          } else {
+            console.warn('Failed to fetch SOS requests, using empty array');
+            setSosRequests([]);
+          }
         }
 
         // Transform data to match component interfaces
@@ -389,7 +402,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     
     setIsSendingAlert(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/admin/send-alert`, {
+      const response = await fetch(`${API_ENDPOINTS.ADMIN.SOS_REQUESTS.replace('/admin/sos-requests', '')}/admin/send-alert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -694,7 +707,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
                   onClick={async () => {
                     // Trigger fresh AI prediction for this historical zone
                     try {
-                      const response = await fetch(`${API_ENDPOINTS.HEALTH.replace('/health', '')}/gis/predict-location?latitude=${zone.center[0]}&longitude=${zone.center[1]}`, {
+                      const response = await fetch(`${API_ENDPOINTS.GIS.PREDICT_LOCATION}?latitude=${zone.center[0]}&longitude=${zone.center[1]}`, {
                         method: 'POST'
                       });
                       const prediction = await response.json();
