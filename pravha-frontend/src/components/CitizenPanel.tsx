@@ -4,6 +4,8 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
 import CitizenGIS from './CitizenGIS';
 import WeatherWidget from './WeatherWidget';
+import SkeletonLoader from './SkeletonLoader';
+import LoadingSpinner from './LoadingSpinner';
 
 interface LocationData {
   latitude: number;
@@ -57,6 +59,12 @@ const CitizenPanel = ({ user, onBack }: {
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [shelterSortBy, setShelterSortBy] = useState<'distance' | 'occupancy'>('distance');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [notifications, setNotifications] = useState<Array<{id: string, message: string, type: 'info' | 'warning' | 'error', timestamp: Date}>>([]);
+  const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
+  const [isLoadingShelters, setIsLoadingShelters] = useState(false);
 
   // Precautions state
   const [emergencyKit, setEmergencyKit] = useState([
@@ -172,8 +180,51 @@ const CitizenPanel = ({ user, onBack }: {
     return () => clearInterval(timer);
   }, []);
 
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      addNotification('Connection restored', 'info');
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      addNotification('Connection lost - some features may be limited', 'warning');
+    };
+
+    // Handle keyboard navigation
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
+
+  // Add notification function
+  const addNotification = (message: string, type: 'info' | 'warning' | 'error') => {
+    const id = Date.now().toString();
+    const notification = { id, message, type, timestamp: new Date() };
+    setNotifications(prev => [notification, ...prev.slice(0, 4)]); // Keep only last 5
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
+
   const fetchAlerts = async () => {
     try {
+      setIsLoadingAlerts(true);
       const token = localStorage.getItem('auth_token');
       const response = await fetch('http://localhost:8002/alerts/history?limit=5', {
         headers: {
@@ -188,6 +239,8 @@ const CitizenPanel = ({ user, onBack }: {
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
       setAlerts([]);
+    } finally {
+      setIsLoadingAlerts(false);
     }
   };
 
@@ -299,33 +352,54 @@ const CitizenPanel = ({ user, onBack }: {
   };
 
   const renderSidebar = () => (
-    <div className="citizen-sidebar">
+    <div className={`citizen-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">🏠</div>
         <div className="sidebar-title">
           <h3>Citizen Portal</h3>
           <p>Flood Safety Dashboard</p>
         </div>
+        <button 
+          className="mobile-close-btn"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-label="Close navigation menu"
+        >
+          ✕
+        </button>
       </div>
 
       <nav className="sidebar-nav">
         <button
           className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => {
+            setActiveTab('dashboard');
+            setIsMobileMenuOpen(false);
+          }}
+          aria-label="Navigate to dashboard"
+          aria-current={activeTab === 'dashboard' ? 'page' : undefined}
         >
-          <span className="nav-icon">🏠</span>
+          <span className="nav-icon" aria-hidden="true">🏠</span>
           <span>{getTranslatedText('common', 'dashboard', currentLanguage)}</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'alerts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('alerts')}
+          onClick={() => {
+            setActiveTab('alerts');
+            setIsMobileMenuOpen(false);
+          }}
         >
           <span className="nav-icon">🚨</span>
           <span>Active {getTranslatedText('common', 'alerts', currentLanguage)}</span>
+          {alerts.length > 0 && (
+            <span className="nav-badge">{alerts.length}</span>
+          )}
         </button>
         <button
           className={`nav-item ${activeTab === 'shelters' ? 'active' : ''}`}
-          onClick={() => setActiveTab('shelters')}
+          onClick={() => {
+            setActiveTab('shelters');
+            setIsMobileMenuOpen(false);
+          }}
         >
           <span className="nav-icon">🏥</span>
           <span>Find {getTranslatedText('common', 'shelters', currentLanguage)}</span>
@@ -335,6 +409,7 @@ const CitizenPanel = ({ user, onBack }: {
           onClick={() => {
             console.log('Precautions button clicked'); // Debug log
             setActiveTab('precautions');
+            setIsMobileMenuOpen(false);
           }}
         >
           <span className="nav-icon">🛡️</span>
@@ -342,14 +417,20 @@ const CitizenPanel = ({ user, onBack }: {
         </button>
         <button
           className={`nav-item ${activeTab === 'gis' ? 'active' : ''}`}
-          onClick={() => setActiveTab('gis')}
+          onClick={() => {
+            setActiveTab('gis');
+            setIsMobileMenuOpen(false);
+          }}
         >
           <span className="nav-icon">🗺️</span>
           <span>GIS Map</span>
         </button>
         <button
           className={`nav-item ${activeTab === 'sos' ? 'active' : ''}`}
-          onClick={() => setActiveTab('sos')}
+          onClick={() => {
+            setActiveTab('sos');
+            setIsMobileMenuOpen(false);
+          }}
         >
           <span className="nav-icon">🆘</span>
           <span>Emergency {getTranslatedText('common', 'sos', currentLanguage)}</span>
@@ -362,7 +443,14 @@ const CitizenPanel = ({ user, onBack }: {
           <div className="user-details">
             <div className="user-name">{user?.name}</div>
             <div className="user-role">Citizen</div>
+            <div className={`connection-status ${isOnline ? 'online' : 'offline'}`}>
+              <span className="status-dot"></span>
+              {isOnline ? 'Online' : 'Offline'}
+            </div>
           </div>
+        </div>
+        <div className="last-update">
+          Last updated: {lastUpdateTime.toLocaleTimeString()}
         </div>
         <button className="logout-btn" onClick={() => {
           localStorage.removeItem('auth_token');
@@ -485,9 +573,15 @@ const CitizenPanel = ({ user, onBack }: {
       </div>
 
       <div className="alerts-container">
-        {alerts.length > 0 ? (
+        {isLoadingAlerts ? (
+          <div className="alerts-loading">
+            <SkeletonLoader type="card" />
+            <SkeletonLoader type="card" />
+            <SkeletonLoader type="card" />
+          </div>
+        ) : alerts.length > 0 ? (
           alerts.map((alert, index) => (
-            <div key={index} className="alert-card">
+            <div key={index} className="alert-card animate-fade-in-up" style={{ animationDelay: `${index * 0.1}s` }}>
               <div className="alert-card-header">
                 <span className={`alert-level-badge ${alert.risk_level?.toLowerCase()}`}>
                   {alert.risk_level} RISK
@@ -503,7 +597,7 @@ const CitizenPanel = ({ user, onBack }: {
             </div>
           ))
         ) : (
-          <div className="no-alerts-message">
+          <div className="no-alerts-message animate-fade-in-up">
             <span className="no-alerts-icon">✅</span>
             <h3>No Active Alerts</h3>
             <p>There are currently no flood alerts in your area.</p>
@@ -849,9 +943,22 @@ const CitizenPanel = ({ user, onBack }: {
 
   return (
     <div className="citizen-container">
+      {/* Skip to content link for accessibility */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      
       {/* Top Header */}
       <div className="citizen-header">
         <div className="header-content">
+        <button 
+          className="mobile-nav-toggle"
+          onClick={() => setIsMobileMenuOpen(true)}
+          aria-label="Open navigation menu"
+          aria-expanded={isMobileMenuOpen}
+        >
+          ☰
+        </button>
           <div className="header-icon">🏠</div>
           <div className="header-text">
             <h1>Flood Safety Portal</h1>
@@ -859,6 +966,16 @@ const CitizenPanel = ({ user, onBack }: {
           </div>
         </div>
         <div className="header-controls">
+          <div className="notifications-container">
+            {notifications.map(notification => (
+              <div 
+                key={notification.id} 
+                className={`notification notification-${notification.type}`}
+              >
+                {notification.message}
+              </div>
+            ))}
+          </div>
           <div className="current-time">
             <div className="time-display">
               {currentTime.toLocaleTimeString()}
@@ -874,12 +991,28 @@ const CitizenPanel = ({ user, onBack }: {
           </div>
         </div>
       </div>
+      
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="mobile-nav-overlay"
+          onClick={() => setIsMobileMenuOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setIsMobileMenuOpen(false);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close navigation menu"
+        />
+      )}
 
       <div className="citizen-layout">
         {renderSidebar()}
-        <div className="citizen-main">
+        <main id="main-content" className="citizen-main" role="main">
           {renderContent()}
-        </div>
+        </main>
       </div>
     </div>
   );

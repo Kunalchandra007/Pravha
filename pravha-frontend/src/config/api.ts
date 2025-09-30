@@ -4,7 +4,7 @@
 export const SURVAM_AI_API_KEY = 'sk_vykquazm_WGrJMKiI4Nn8rQKYV2LXv9NQ';
 
 // Backend API URL configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
 
 // API endpoints
 export const API_ENDPOINTS = {

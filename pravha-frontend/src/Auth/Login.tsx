@@ -94,7 +94,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
     // Test Railway backend health first
     try {
       console.log('🏥 Testing Railway backend health...');
-      const healthResponse = await fetch('https://pravha-production.up.railway.app/health');
+      const healthResponse = await fetch('http://localhost:8002/health');
       console.log('🏥 Health check response:', healthResponse.status);
       if (!healthResponse.ok) {
         throw new Error(`Railway backend health check failed: ${healthResponse.status}`);

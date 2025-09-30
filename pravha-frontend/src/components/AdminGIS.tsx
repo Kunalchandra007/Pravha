@@ -6,7 +6,7 @@ import { generateDemoShelters, generateDemoAlerts, generateDemoSOS, getStateFrom
 import { apiRequest } from '../utils/tokenManager';
 
 // API Configuration - Inline to avoid import issues
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;

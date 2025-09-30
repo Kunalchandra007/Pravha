@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Auth.css';
 // API Configuration - Inline to avoid import issues
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://pravha-production.up.railway.app';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
 
 const API_ENDPOINTS = {
   AUTH: {

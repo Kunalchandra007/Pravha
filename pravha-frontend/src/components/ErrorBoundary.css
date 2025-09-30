@@ -1,0 +1,162 @@
+/* Error Boundary Styles */
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.error-content {
+  text-align: center;
+  max-width: 500px;
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.error-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.error-message {
+  margin: 0 0 2rem 0;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.error-details {
+  margin: 2rem 0;
+  text-align: left;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.error-details summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.error-stack {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-retry-btn,
+.error-refresh-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.error-retry-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.error-retry-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.error-refresh-btn {
+  background: #6b7280;
+  color: white;
+}
+
+.error-refresh-btn:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .error-boundary {
+    padding: 1rem;
+    min-height: 300px;
+  }
+  
+  .error-content {
+    padding: 1.5rem;
+  }
+  
+  .error-icon {
+    font-size: 3rem;
+  }
+  
+  .error-title {
+    font-size: 1.25rem;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .error-retry-btn,
+  .error-refresh-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .error-boundary {
+    background: #1f2937;
+  }
+  
+  .error-content {
+    background: #374151;
+    border-color: #4b5563;
+  }
+  
+  .error-title {
+    color: #f9fafb;
+  }
+  
+  .error-message {
+    color: #d1d5db;
+  }
+  
+  .error-details {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+  
+  .error-details summary {
+    color: #e5e7eb;
+  }
+}

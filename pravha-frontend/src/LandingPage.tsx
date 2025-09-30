@@ -17,6 +17,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
     coverage: 0,
     accuracy: 0
   });
+  const [isVisible, setIsVisible] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrollY, setScrollY] = useState(0);
 
   const features = [
     {
@@ -84,15 +87,71 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
     return () => clearInterval(featureTimer);
   }, [features.length]);
 
+  useEffect(() => {
+    // Intersection Observer for animations
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const elements = document.querySelectorAll('.animate-on-scroll');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    // Mouse tracking for parallax effects
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({
+        x: (e.clientX / window.innerWidth) * 100,
+        y: (e.clientY / window.innerHeight) * 100,
+      });
+    };
+
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
     <div className="landing-page">
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-background">
           <div className="floating-elements">
-            <div className="wave wave-1"></div>
-            <div className="wave wave-2"></div>
-            <div className="wave wave-3"></div>
+            <div 
+              className="wave wave-1"
+              style={{
+                transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`
+              }}
+            ></div>
+            <div 
+              className="wave wave-2"
+              style={{
+                transform: `translate(${mousePosition.x * -0.01}px, ${mousePosition.y * -0.01}px)`
+              }}
+            ></div>
+            <div 
+              className="wave wave-3"
+              style={{
+                transform: `translate(${mousePosition.x * 0.03}px, ${mousePosition.y * 0.03}px)`
+              }}
+            ></div>
           </div>
         </div>
         
@@ -177,7 +236,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
       {/* Features Section */}
       <section className="features-section">
         <div className="container">
-          <div className="section-header">
+          <div className={`section-header animate-on-scroll ${isVisible ? 'animate-fade-in-up' : ''}`}>
             <h2 className="section-title">Powerful Features</h2>
             <p className="section-subtitle">
               Comprehensive flood management tools for citizens and government agencies
@@ -188,8 +247,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
             {features.map((feature, index) => (
               <div 
                 key={index}
-                className={`feature-card ${currentFeature === index ? 'active' : ''}`}
-                style={{ '--feature-color': feature.color } as React.CSSProperties}
+                className={`feature-card animate-on-scroll ${currentFeature === index ? 'active' : ''} ${isVisible ? 'animate-fade-in-up' : ''}`}
+                style={{ 
+                  '--feature-color': feature.color,
+                  animationDelay: `${index * 0.1}s`
+                } as React.CSSProperties}
               >
                 <div className="feature-icon">{feature.icon}</div>
                 <h3 className="feature-title">{feature.title}</h3>

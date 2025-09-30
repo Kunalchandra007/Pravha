@@ -12,6 +12,8 @@ import ShelterFinder from './components/ShelterFinder';
 import AdminPanel from './components/AdminPanel';
 import CitizenPanel from './components/CitizenPanel';
 import LanguageSelector from './components/LanguageSelector';
+import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 import { TranslationProvider } from './contexts/TranslationContext';
 import { getSurvamApiKey, API_ENDPOINTS } from './config/api';
 
@@ -85,6 +87,33 @@ function App() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [predictionLocation, setPredictionLocation] = useState<[number, number] | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isAppLoading, setIsAppLoading] = useState(true);
+
+  // Initialize app
+  React.useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Check for existing user session
+        const token = localStorage.getItem('auth_token');
+        const userData = localStorage.getItem('user_data');
+        
+        if (token && userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          setCurrentView(parsedUser.role === 'admin' ? 'admin' : 'dashboard');
+        }
+        
+        // Simulate app initialization
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error('App initialization error:', error);
+      } finally {
+        setIsAppLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   const handleFeatureChange = (name: string, value: number) => {
     setFeatureValues(prev => ({ ...prev, [name]: value }));
@@ -230,13 +259,25 @@ function App() {
     return acc;
   }, {} as Record<string, FeatureInput[]>);
 
+  if (isAppLoading) {
+    return (
+      <LoadingSpinner 
+        fullScreen 
+        size="large" 
+        text="Loading Pravha Flood Management System..." 
+      />
+    );
+  }
+
   // Render different views based on current state
   if ((currentView as ViewType) === 'landing') {
     return (
-      <LandingPage 
-        onLogin={() => setCurrentView('login' as ViewType)}
-        onSignup={() => setCurrentView('signup' as ViewType)}
-      />
+      <ErrorBoundary>
+        <LandingPage 
+          onLogin={() => setCurrentView('login' as ViewType)}
+          onSignup={() => setCurrentView('signup' as ViewType)}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -328,17 +369,21 @@ function App() {
     // Use CitizenPanel for regular users, keep Dashboard for backward compatibility
     if (user?.role === 'admin') {
       return (
-        <AdminPanel 
-          user={user}
-          onBack={() => setCurrentView('landing' as ViewType)}
-        />
+        <ErrorBoundary>
+          <AdminPanel 
+            user={user}
+            onBack={() => setCurrentView('landing' as ViewType)}
+          />
+        </ErrorBoundary>
       );
     } else {
       return (
-        <CitizenPanel 
-          user={user!}
-          onBack={() => setCurrentView('landing' as ViewType)}
-        />
+        <ErrorBoundary>
+          <CitizenPanel 
+            user={user!}
+            onBack={() => setCurrentView('landing' as ViewType)}
+          />
+        </ErrorBoundary>
       );
     }
   }
