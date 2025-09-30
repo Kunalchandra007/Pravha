@@ -770,6 +770,7 @@
     grid-template-columns: 1fr;
     text-align: center;
     gap: 40px;
+    padding: 0 15px;
   }
   
   .title-main {
@@ -779,12 +780,32 @@
   .hero-buttons {
     justify-content: center;
     flex-wrap: wrap;
+    gap: 12px;
   }
   
   .hero-stats {
     justify-content: center;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 0 10px;
+  }
+  
+  .stat-item {
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+  
+  .stat-number {
+    font-size: 1.8rem;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+  }
+  
+  .hero-visual {
+    display: none; /* Hide dashboard preview on mobile to prevent cutoff */
   }
   
   .impact-content {
@@ -811,6 +832,71 @@
     flex-direction: column;
     gap: 20px;
     text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-content {
+    padding: 0 10px;
+    gap: 30px;
+  }
+  
+  .title-main {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .title-sub {
+    font-size: 1.2rem;
+  }
+  
+  .hero-description {
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
+  
+  .hero-stats {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .stat-item {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .container {
+    padding: 0 15px;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .section-subtitle {
+    font-size: 1rem;
   }
 }
 

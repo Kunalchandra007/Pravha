@@ -94,6 +94,7 @@ input[type="range"]::-moz-range-thumb:hover {
   z-index: 1000;
   backdrop-filter: blur(10px);
   min-width: 120px;
+  max-width: 150px;
 }
 
 .language-icon {
@@ -603,6 +604,24 @@ input[type="range"]::-moz-range-thumb:hover {
   
   .text-xs {
     font-size: 0.75rem;
+  }
+  
+  /* Language selector mobile adjustments */
+  .language-selector {
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    min-width: 100px;
+    max-width: 120px;
+  }
+  
+  .language-select {
+    font-size: 12px;
+    padding: 2px 6px;
+  }
+  
+  .language-icon {
+    font-size: 14px;
   }
 }
 
