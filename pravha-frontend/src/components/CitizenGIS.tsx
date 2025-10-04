@@ -269,7 +269,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
     // Refresh data every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [defaultShelters]);
 
   // Get current location
   useEffect(() => {

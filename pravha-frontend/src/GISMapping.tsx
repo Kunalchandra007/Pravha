@@ -484,7 +484,7 @@ const GISMapping: React.FC<GISMappingProps> = ({ onLocationSelect, onBack, predi
     // Calculate radius based on probability (in meters)
     // Higher probability = larger affected area
     const baseRadius = 500; // 500m base radius
-    const maxRadius = 3000; // 3km max radius
+    // const maxRadius = 3000; // 3km max radius
     const probabilityFactor = probability * 100; // Convert to percentage
 
     // Scale radius based on probability: 0-30% = 500-1000m, 30-60% = 1000-2000m, 60%+ = 2000-3000m

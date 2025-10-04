@@ -79,11 +79,11 @@ function App() {
     features.reduce((acc, feature) => ({ ...acc, [feature.name]: feature.defaultValue }), {})
   );
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setLoading] = useState(false);
+  const [, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('landing');
   const [location, setLocation] = useState<string>('Unknown');
-  const [enableAlerts, setEnableAlerts] = useState<boolean>(true);
+  const [enableAlerts] = useState<boolean>(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [predictionLocation, setPredictionLocation] = useState<[number, number] | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -115,9 +115,9 @@ function App() {
     initializeApp();
   }, []);
 
-  const handleFeatureChange = (name: string, value: number) => {
-    setFeatureValues(prev => ({ ...prev, [name]: value }));
-  };
+  // const handleFeatureChange = (name: string, value: number) => {
+  //   setFeatureValues(prev => ({ ...prev, [name]: value }));
+  // };
 
   // Authentication handlers
   const handleLogin = (userData: User) => {
@@ -132,132 +132,132 @@ function App() {
     setCurrentView(userData.role === 'admin' ? 'admin' as ViewType : 'dashboard' as ViewType);
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    setCurrentView('landing' as ViewType);
-  };
+  // const handleLogout = () => {
+  //   setUser(null);
+  //   localStorage.removeItem('auth_token');
+  //   localStorage.removeItem('user_data');
+  //   setCurrentView('landing' as ViewType);
+  // };
 
   // Get user's current location
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([latitude, longitude]);
-          setPredictionLocation([latitude, longitude]);
-          setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setLocation('Location access denied');
-        }
-      );
-    } else {
-      setLocation('Geolocation not supported');
-    }
-  };
+  // const getCurrentLocation = () => {
+  //   if (navigator.geolocation) {
+  //     navigator.geolocation.getCurrentPosition(
+  //       (position) => {
+  //         const { latitude, longitude } = position.coords;
+  //         setUserLocation([latitude, longitude]);
+  //         setPredictionLocation([latitude, longitude]);
+  //         setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+  //       },
+  //       (error) => {
+  //         console.error('Error getting location:', error);
+  //         setLocation('Location access denied');
+  //       }
+  //     );
+  //   } else {
+  //     setLocation('Geolocation not supported');
+  //   }
+  // };
 
-  const handlePredict = async () => {
-    setLoading(true);
-    setError(null);
-    
-    // Store the current prediction location
-    let predictionCoords: [number, number] | null = null;
-    
-    if (userLocation) {
-      predictionCoords = userLocation;
-      console.log('Using user location for prediction:', userLocation);
-    } else if (location && location.includes(',')) {
-      // Parse location string to coordinates
-      const coords = location.split(',').map(c => parseFloat(c.trim()));
-      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-        predictionCoords = [coords[0], coords[1]];
-        console.log('Using parsed location string for prediction:', predictionCoords);
-      }
-    }
-    
-    if (predictionCoords) {
-      setPredictionLocation(predictionCoords);
-      console.log('Prediction location set:', predictionCoords);
-    }
-    
-    try {
-        const requestBody = {
-          features: features.map(f => featureValues[f.name]),
-          location: location,
-          enable_alerts: enableAlerts
-        };
-        
-        console.log('Sending prediction request:', requestBody);
-        
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-          throw new Error('Authentication token not found. Please log in again.');
-        }
+  // const handlePredict = async () => {
+  //   setLoading(true);
+  //   setError(null);
+  //   
+  //   // Store the current prediction location
+  //   let predictionCoords: [number, number] | null = null;
+  //   
+  //   if (userLocation) {
+  //     predictionCoords = userLocation;
+  //     console.log('Using user location for prediction:', userLocation);
+  //   } else if (location && location.includes(',')) {
+  //     // Parse location string to coordinates
+  //     const coords = location.split(',').map(c => parseFloat(c.trim()));
+  //     if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+  //       predictionCoords = [coords[0], coords[1]];
+  //       console.log('Using parsed location string for prediction:', predictionCoords);
+  //     }
+  //   }
+  //   
+  //   if (predictionCoords) {
+  //     setPredictionLocation(predictionCoords);
+  //     console.log('Prediction location set:', predictionCoords);
+  //   }
+  //   
+  //   try {
+  //       const requestBody = {
+  //         features: features.map(f => featureValues[f.name]),
+  //         location: location,
+  //         enable_alerts: enableAlerts
+  //       };
+  //       
+  //       console.log('Sending prediction request:', requestBody);
+  //       
+  //       const token = localStorage.getItem('auth_token');
+  //       if (!token) {
+  //         throw new Error('Authentication token not found. Please log in again.');
+  //       }
 
-        const response = await fetch(API_ENDPOINTS.PREDICTIONS.PREDICT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody),
-      });
+  //       const response = await fetch(API_ENDPOINTS.PREDICTIONS.PREDICT, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify(requestBody),
+  //     });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please log in again.');
-        } else if (response.status === 403) {
-          throw new Error('Access denied.');
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      }
+  //     if (!response.ok) {
+  //       if (response.status === 401) {
+  //         throw new Error('Authentication failed. Please log in again.');
+  //       } else if (response.status === 403) {
+  //         throw new Error('Access denied.');
+  //       } else {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
+  //     }
 
-      const data: PredictionResponse = await response.json();
-      console.log('Prediction response:', data);
-      setPrediction(data);
-      
-      // Automatically open GIS map to show prediction location
-      if (predictionCoords) {
-        console.log('🎯 Opening GIS map to show prediction location:', predictionCoords);
-        setCurrentView('gis' as ViewType);
-      }
-    } catch (err) {
-      console.error('Prediction error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     const data: PredictionResponse = await response.json();
+  //     console.log('Prediction response:', data);
+  //     setPrediction(data);
+  //     
+  //     // Automatically open GIS map to show prediction location
+  //     if (predictionCoords) {
+  //       console.log('🎯 Opening GIS map to show prediction location:', predictionCoords);
+  //       setCurrentView('gis' as ViewType);
+  //     }
+  //   } catch (err) {
+  //     console.error('Prediction error:', err);
+  //     setError(err instanceof Error ? err.message : 'An error occurred');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const getRiskColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'HIGH': return '#dc2626';
-      case 'MODERATE': return '#d97706';
-      case 'LOW': return '#059669';
-      default: return '#6b7280';
-    }
-  };
+  // const getRiskColor = (riskLevel: string) => {
+  //   switch (riskLevel) {
+  //     case 'HIGH': return '#dc2626';
+  //     case 'MODERATE': return '#d97706';
+  //     case 'LOW': return '#059669';
+  //     default: return '#6b7280';
+  //   }
+  // };
 
-  const getAlertIcon = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'HIGH': return '🚨';
-      case 'MODERATE': return '⚠️';
-      case 'LOW': return '✅';
-      default: return 'ℹ️';
-    }
-  };
+  // const getAlertIcon = (riskLevel: string) => {
+  //   switch (riskLevel) {
+  //     case 'HIGH': return '🚨';
+  //     case 'MODERATE': return '⚠️';
+  //     case 'LOW': return '✅';
+  //     default: return 'ℹ️';
+  //   }
+  // };
 
-  const groupedFeatures = features.reduce((acc, feature) => {
-    if (!acc[feature.category]) {
-      acc[feature.category] = [];
-    }
-    acc[feature.category].push(feature);
-    return acc;
-  }, {} as Record<string, FeatureInput[]>);
+  // const groupedFeatures = features.reduce((acc, feature) => {
+  //   if (!acc[feature.category]) {
+  //     acc[feature.category] = [];
+  //   }
+  //   acc[feature.category].push(feature);
+  //   return acc;
+  // }, {} as Record<string, FeatureInput[]>);
 
   if (isAppLoading) {
     return (

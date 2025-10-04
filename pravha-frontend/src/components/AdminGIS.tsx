@@ -393,24 +393,24 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
     return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   };
 
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds}s ago`;
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes}m ago`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours}h ago`;
-    } else {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}d ago`;
-    }
-  };
+  // const formatTimeAgo = (timestamp: string) => {
+  //   const now = new Date();
+  //   const time = new Date(timestamp);
+  //   const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
+  //   
+  //   if (diffInSeconds < 60) {
+  //     return `${diffInSeconds}s ago`;
+  //   } else if (diffInSeconds < 3600) {
+  //     const minutes = Math.floor(diffInSeconds / 60);
+  //     return `${minutes}m ago`;
+  //   } else if (diffInSeconds < 86400) {
+  //     const hours = Math.floor(diffInSeconds / 3600);
+  //     return `${hours}h ago`;
+  //   } else {
+  //     const days = Math.floor(diffInSeconds / 86400);
+  //     return `${days}d ago`;
+  //   }
+  // };
 
   const formatDetailedTime = (timestamp: string | number) => {
     let time: Date;

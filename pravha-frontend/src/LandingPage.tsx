@@ -19,7 +19,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignup }) => {
   });
   const [isVisible, setIsVisible] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [scrollY, setScrollY] = useState(0);
+  const [, setScrollY] = useState(0);
 
   const features = [
     {

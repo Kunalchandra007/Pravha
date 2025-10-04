@@ -100,24 +100,24 @@ const AdminPanel = ({ user, onBack }: {
   const [currentSOS, setCurrentSOS] = useState<any[]>([]);
 
   // Format time functions
-  const formatTimeAgo = (timestamp: number) => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds}s ago`;
-    } else if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes}m ago`;
-    } else if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours}h ago`;
-    } else {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}d ago`;
-    }
-  };
+  // const formatTimeAgo = (timestamp: number) => {
+  //   const now = new Date();
+  //   const time = new Date(timestamp);
+  //   const diffInSeconds = Math.floor((now.getTime() - time.getTime()) / 1000);
+  //   
+  //   if (diffInSeconds < 60) {
+  //     return `${diffInSeconds}s ago`;
+  //   } else if (diffInSeconds < 3600) {
+  //     const minutes = Math.floor(diffInSeconds / 60);
+  //     return `${minutes}m ago`;
+  //   } else if (diffInSeconds < 86400) {
+  //     const hours = Math.floor(diffInSeconds / 3600);
+  //     return `${hours}h ago`;
+  //   } else {
+  //     const days = Math.floor(diffInSeconds / 86400);
+  //     return `${days}d ago`;
+  //   }
+  // };
 
   const formatDetailedTime = (timestamp: number) => {
     // Handle timestamp conversion properly
@@ -148,7 +148,7 @@ const AdminPanel = ({ user, onBack }: {
     });
   }, [currentSOS]);
   const [alertsLoading, setAlertsLoading] = useState(false);
-  const [sosUpdating, setSosUpdating] = useState<string | null>(null);
+  const [, setSosUpdating] = useState<string | null>(null);
 
   // GIS states
   const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
@@ -1238,207 +1238,6 @@ const AdminPanel = ({ user, onBack }: {
     );
   };
 
-  const renderAdminGIS = () => (
-    <div className="admin-content">
-      <div className="content-header">
-        <h2>🗺️ GIS Alert Mapping</h2>
-        <p>Monitor and manage flood alerts on interactive map</p>
-      </div>
-
-      <div className="gis-container">
-        {/* Alert Locations Panel */}
-        <div className="alert-locations-panel">
-          <h3>📍 Alert Locations</h3>
-          {currentAlerts.length > 0 ? (
-            <div className="alert-locations-list">
-              {currentAlerts.map((alert, index) => (
-                <div
-                  key={index}
-                  className={`location-item ${selectedAlert?.id === alert.id ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedAlert(alert);
-                    if (alert.coordinates) {
-                      setMapCenter([alert.coordinates[0], alert.coordinates[1]]);
-                    }
-                  }}
-                >
-                  <div className="location-header">
-                    <span className="location-icon">{getAlertIcon(alert.risk_level)}</span>
-                    <span className="location-title">{alert.title || 'Flood Alert'}</span>
-                    <span className={`location-risk ${alert.risk_level?.toLowerCase()}`}>
-                      {alert.risk_level || 'MODERATE'}
-                    </span>
-                  </div>
-                  <div className="location-details">
-                    <div className="location-coords">
-                      📍 {alert.coordinates ?
-                        `${alert.coordinates[0].toFixed(4)}, ${alert.coordinates[1].toFixed(4)}` :
-                        alert.location || 'Unknown Location'
-                      }
-                    </div>
-                    <div className="location-time">
-                      ⏰ {new Date(alert.timestamp).toLocaleString()}
-                    </div>
-                    <div className="location-probability">
-                      📊 {((alert.probability || 0.5) * 100).toFixed(1)}% Risk
-                    </div>
-                  </div>
-                  <div className="location-actions">
-                    <button
-                      className="resend-alert-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (alert.coordinates) {
-                          resendAlert(alert.id, alert.coordinates);
-                        } else {
-                          alert('No coordinates available for this alert');
-                        }
-                      }}
-                    >
-                      📢 Resend Alert
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="no-alerts-message">
-              <span className="no-alerts-icon">✅</span>
-              <span>No active alerts to display on map</span>
-            </div>
-          )}
-        </div>
-
-        {/* Map Display */}
-        <div className="map-display">
-          <div className="map-header">
-            <h3>🌍 Interactive Map</h3>
-            {selectedAlert && (
-              <div className="selected-alert-info">
-                <span>Selected: {selectedAlert.title || 'Flood Alert'}</span>
-                <span className={`selected-risk ${selectedAlert.risk_level?.toLowerCase()}`}>
-                  {selectedAlert.risk_level}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="map-container">
-            {/* OpenStreetMap Embed */}
-            <iframe
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCenter[1] - 0.1},${mapCenter[0] - 0.1},${mapCenter[1] + 0.1},${mapCenter[0] + 0.1}&layer=mapnik${selectedAlert?.coordinates ? `&marker=${selectedAlert.coordinates[0]},${selectedAlert.coordinates[1]}` : ''}`}
-              width="100%"
-              height="500"
-              style={{ border: 'none', borderRadius: '8px' }}
-              title="Alert Locations Map"
-            ></iframe>
-          </div>
-
-          <div className="map-controls">
-            <button
-              onClick={() => {
-                if (currentLocation) {
-                  setMapCenter([currentLocation.latitude, currentLocation.longitude]);
-                } else {
-                  getCurrentLocation();
-                }
-              }}
-              className="map-control-btn"
-            >
-              📍 Center on My Location
-            </button>
-            <button
-              onClick={() => setMapCenter([20.5937, 78.9629])}
-              className="map-control-btn"
-            >
-              🇮🇳 Center on India
-            </button>
-            {selectedAlert && (
-              <button
-                onClick={() => window.open(`https://www.google.com/maps?q=${selectedAlert.coordinates[0]},${selectedAlert.coordinates[1]}&z=15`, '_blank')}
-                className="map-control-btn"
-              >
-                🗺️ Open in Google Maps
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Alert Details Panel */}
-      {selectedAlert && (
-        <div className="alert-details-panel">
-          <h3>📋 Alert Details</h3>
-          <div className="alert-detail-card">
-            <div className="alert-detail-header">
-              <span className="detail-icon">{getAlertIcon(selectedAlert.risk_level)}</span>
-              <span className="detail-title">{selectedAlert.title || 'Flood Alert'}</span>
-              <span className={`detail-risk ${selectedAlert.risk_level?.toLowerCase()}`}>
-                {selectedAlert.risk_level} RISK
-              </span>
-            </div>
-            <div className="alert-detail-content">
-              <div className="detail-row">
-                <span className="detail-label">Location:</span>
-                <span className="detail-value">
-                  {selectedAlert.coordinates ?
-                    `${selectedAlert.coordinates[0].toFixed(6)}, ${selectedAlert.coordinates[1].toFixed(6)}` :
-                    selectedAlert.location || 'Unknown'
-                  }
-                </span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Risk Probability:</span>
-                <span className="detail-value">{((selectedAlert.probability || 0.5) * 100).toFixed(1)}%</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Generated:</span>
-                <span className="detail-value">{new Date(selectedAlert.timestamp).toLocaleString()}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Alert ID:</span>
-                <span className="detail-value">{selectedAlert.id || 'N/A'}</span>
-              </div>
-              {selectedAlert.message && (
-                <div className="detail-row">
-                  <span className="detail-label">Message:</span>
-                  <span className="detail-value">{selectedAlert.message}</span>
-                </div>
-              )}
-            </div>
-            <div className="alert-detail-actions">
-              <button
-                className="detail-action-btn primary"
-                onClick={() => {
-                  if (selectedAlert.coordinates) {
-                    resendAlert(selectedAlert.id, selectedAlert.coordinates);
-                  }
-                }}
-              >
-                📢 Resend Alert
-              </button>
-              <button
-                className="detail-action-btn secondary"
-                onClick={() => setActiveTab('alerts')}
-              >
-                📝 Manage Alert
-              </button>
-              <button
-                className="detail-action-btn info"
-                onClick={() => {
-                  if (selectedAlert.coordinates) {
-                    window.open(`https://www.google.com/maps?q=${selectedAlert.coordinates[0]},${selectedAlert.coordinates[1]}&z=15`, '_blank');
-                  }
-                }}
-              >
-                🗺️ View on Map
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   const renderSOSManagement = () => (
     <div className="admin-content">

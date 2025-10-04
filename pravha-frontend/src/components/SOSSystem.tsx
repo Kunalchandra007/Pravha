@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './SOSSystem.css';
 
 interface SOSRequest {
@@ -33,12 +33,7 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sosHistory, setSosHistory] = useState<SOSRequest[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
-
-  useEffect(() => {
-    checkLocationPermission();
-    fetchSOSHistory();
-  }, []);
+  const [, setLocationPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
 
   const checkLocationPermission = async () => {
     if ('geolocation' in navigator) {
@@ -91,7 +86,7 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
     );
   };
 
-  const fetchSOSHistory = async () => {
+  const fetchSOSHistory = useCallback(async () => {
     try {
       // This would typically fetch from the backend
       // For now, we'll use mock data
@@ -114,7 +109,12 @@ const SOSSystem: React.FC<SOSSystemProps> = ({ user, onBack }) => {
     } catch (error) {
       console.error('Failed to fetch SOS history:', error);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    checkLocationPermission();
+    fetchSOSHistory();
+  }, [fetchSOSHistory]);
 
   const submitSOSRequest = async () => {
     if (!currentLocation) {

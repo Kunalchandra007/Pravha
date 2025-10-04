@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './ShelterFinder.css';
 
 interface Shelter {
@@ -32,12 +32,7 @@ const ShelterFinder: React.FC<ShelterFinderProps> = ({ user, onBack }) => {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<string>('distance');
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
-  const [showDirections, setShowDirections] = useState(false);
-
-  useEffect(() => {
-    fetchShelters();
-    getUserLocation();
-  }, []);
+  const [, setShowDirections] = useState(false);
 
   const getUserLocation = () => {
     if (navigator.geolocation) {
@@ -57,6 +52,65 @@ const ShelterFinder: React.FC<ShelterFinderProps> = ({ user, onBack }) => {
       setUserLocation([28.6139, 77.2090]);
     }
   };
+
+  const fetchShelters = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8002/gis/evacuation-centers');
+      
+      let sheltersData: Shelter[] = [];
+      
+      if (response.ok) {
+        const data = await response.json();
+        const apiShelters: Shelter[] = data.evacuation_centers.map((center: any) => ({
+          id: center.id,
+          name: center.name,
+          location: center.location,
+          capacity: center.capacity,
+          currentOccupancy: center.current_occupancy || 0,
+          facilities: center.facilities,
+          status: center.status,
+          contact: center.contact,
+          accessibility: center.accessibility !== false
+        }));
+        
+        // Combine API shelters with hardcoded ones
+        sheltersData = [...hardcodedShelters, ...apiShelters];
+      } else {
+        console.log('API failed, using hardcoded shelters');
+        // Use hardcoded shelters if API fails
+        sheltersData = hardcodedShelters;
+      }
+      
+      // Calculate distances if user location is available
+      if (userLocation) {
+        sheltersData.forEach(shelter => {
+          shelter.distance = calculateDistance(userLocation, shelter.location);
+          shelter.estimatedTime = calculateEstimatedTime(shelter.distance);
+        });
+      }
+      
+      setShelters(sheltersData);
+    } catch (error) {
+      console.error('Error fetching shelters:', error);
+      console.log('Using hardcoded shelters due to API error');
+      
+      // Use hardcoded shelters if API fails
+      let sheltersData = hardcodedShelters;
+      
+      // Calculate distances if user location is available
+      if (userLocation) {
+        sheltersData.forEach(shelter => {
+          shelter.distance = calculateDistance(userLocation, shelter.location);
+          shelter.estimatedTime = calculateEstimatedTime(shelter.distance);
+        });
+      }
+      
+      setShelters(sheltersData);
+    } finally {
+      setLoading(false);
+    }
+  }, [userLocation]);
 
   // Hardcoded shelters for demo
   const hardcodedShelters: Shelter[] = [
@@ -150,64 +204,10 @@ const ShelterFinder: React.FC<ShelterFinderProps> = ({ user, onBack }) => {
     }
   ];
 
-  const fetchShelters = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('http://localhost:8002/gis/evacuation-centers');
-      
-      let sheltersData: Shelter[] = [];
-      
-      if (response.ok) {
-        const data = await response.json();
-        const apiShelters: Shelter[] = data.evacuation_centers.map((center: any) => ({
-          id: center.id,
-          name: center.name,
-          location: center.location,
-          capacity: center.capacity,
-          currentOccupancy: center.current_occupancy || 0,
-          facilities: center.facilities,
-          status: center.status,
-          contact: center.contact,
-          accessibility: center.accessibility !== false
-        }));
-        
-        // Combine API shelters with hardcoded ones
-        sheltersData = [...hardcodedShelters, ...apiShelters];
-      } else {
-        console.log('API failed, using hardcoded shelters');
-        // Use hardcoded shelters if API fails
-        sheltersData = hardcodedShelters;
-      }
-      
-      // Calculate distances if user location is available
-      if (userLocation) {
-        sheltersData.forEach(shelter => {
-          shelter.distance = calculateDistance(userLocation, shelter.location);
-          shelter.estimatedTime = calculateEstimatedTime(shelter.distance);
-        });
-      }
-      
-      setShelters(sheltersData);
-    } catch (error) {
-      console.error('Error fetching shelters:', error);
-      console.log('Using hardcoded shelters due to API error');
-      
-      // Use hardcoded shelters if API fails
-      let sheltersData = hardcodedShelters;
-      
-      // Calculate distances if user location is available
-      if (userLocation) {
-        sheltersData.forEach(shelter => {
-          shelter.distance = calculateDistance(userLocation, shelter.location);
-          shelter.estimatedTime = calculateEstimatedTime(shelter.distance);
-        });
-      }
-      
-      setShelters(sheltersData);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchShelters();
+    getUserLocation();
+  }, [fetchShelters]);
 
   const calculateDistance = (loc1: [number, number], loc2: [number, number]): number => {
     const R = 6371; // Earth's radius in kilometers

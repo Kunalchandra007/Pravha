@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface WeatherData {
   temperature: number;
@@ -31,13 +31,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ latitude, longitude }) =>
     lastUpdated: new Date().toLocaleTimeString()
   };
 
-  useEffect(() => {
-    if (latitude && longitude) {
-      fetchWeatherData();
-    }
-  }, [latitude, longitude]);
-
-  const fetchWeatherData = async () => {
+  const fetchWeatherData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -56,7 +50,14 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ latitude, longitude }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (latitude && longitude) {
+      fetchWeatherData();
+    }
+  }, [latitude, longitude, fetchWeatherData]);
+
 
   const getWeatherIcon = (description: string) => {
     const desc = description.toLowerCase();

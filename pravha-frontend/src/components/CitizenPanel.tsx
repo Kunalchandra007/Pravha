@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import './CitizenPanel.css';
 import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
 import CitizenGIS from './CitizenGIS';
 import WeatherWidget from './WeatherWidget';
 import SkeletonLoader from './SkeletonLoader';
-import LoadingSpinner from './LoadingSpinner';
 
 interface LocationData {
   latitude: number;
@@ -60,11 +59,11 @@ const CitizenPanel = ({ user, onBack }: {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [shelterSortBy, setShelterSortBy] = useState<'distance' | 'occupancy'>('distance');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
+  const [lastUpdateTime] = useState<Date>(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [notifications, setNotifications] = useState<Array<{id: string, message: string, type: 'info' | 'warning' | 'error', timestamp: Date}>>([]);
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
-  const [isLoadingShelters, setIsLoadingShelters] = useState(false);
+  const [isLoadingShelters] = useState(false);
 
   // Precautions state
   const [emergencyKit, setEmergencyKit] = useState([
@@ -149,6 +148,28 @@ const CitizenPanel = ({ user, onBack }: {
     }
   ], []);
 
+  const fetchAlerts = useCallback(async () => {
+    try {
+      setIsLoadingAlerts(true);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('http://localhost:8002/alerts/history?limit=5', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAlerts(data.alerts || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch alerts:', error);
+      setAlerts([]);
+    } finally {
+      setIsLoadingAlerts(false);
+    }
+  }, []);
+
   // Sort shelters based on selected criteria
   const sortedShelters = useMemo(() => {
     const sheltersToSort = [...shelters];
@@ -173,7 +194,7 @@ const CitizenPanel = ({ user, onBack }: {
       fetchAlerts();
     }, 30000);
     return () => clearInterval(interval);
-  }, [hardcodedShelters]);
+  }, [hardcodedShelters, fetchAlerts]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -220,28 +241,6 @@ const CitizenPanel = ({ user, onBack }: {
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 5000);
-  };
-
-  const fetchAlerts = async () => {
-    try {
-      setIsLoadingAlerts(true);
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://localhost:8002/alerts/history?limit=5', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAlerts(data.alerts || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch alerts:', error);
-      setAlerts([]);
-    } finally {
-      setIsLoadingAlerts(false);
-    }
   };
 
   const getCurrentLocation = async () => {
