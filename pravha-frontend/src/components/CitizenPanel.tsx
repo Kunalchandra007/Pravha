@@ -63,7 +63,7 @@ const CitizenPanel = ({ user, onBack }: {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [notifications, setNotifications] = useState<Array<{id: string, message: string, type: 'info' | 'warning' | 'error', timestamp: Date}>>([]);
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
-  const [isLoadingShelters] = useState(false);
+  // const [isLoadingShelters] = useState(false);
 
   // Precautions state
   const [emergencyKit, setEmergencyKit] = useState([

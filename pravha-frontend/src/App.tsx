@@ -15,7 +15,7 @@ import LanguageSelector from './components/LanguageSelector';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { TranslationProvider } from './contexts/TranslationContext';
-import { getSurvamApiKey, API_ENDPOINTS } from './config/api';
+import { getSurvamApiKey } from './config/api';
 
 interface PredictionResponse {
   probability: number;
@@ -75,15 +75,15 @@ interface User {
 }
 
 function App() {
-  const [featureValues, setFeatureValues] = useState<Record<string, number>>(
+  const [, setFeatureValues] = useState<Record<string, number>>(
     features.reduce((acc, feature) => ({ ...acc, [feature.name]: feature.defaultValue }), {})
   );
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
   const [, setLoading] = useState(false);
   const [, setError] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('landing');
-  const [location, setLocation] = useState<string>('Unknown');
-  const [enableAlerts] = useState<boolean>(true);
+  const [, setLocation] = useState<string>('Unknown');
+  const [, setEnableAlerts] = useState<boolean>(true);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [predictionLocation, setPredictionLocation] = useState<[number, number] | null>(null);
   const [user, setUser] = useState<User | null>(null);

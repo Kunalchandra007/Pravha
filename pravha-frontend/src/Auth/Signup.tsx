@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import './Auth.css';
-// API Configuration - Inline to avoid import issues
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
-
-const API_ENDPOINTS = {
-  AUTH: {
-    REGISTER: `${API_BASE_URL}/auth/register`,
-    LOGIN: `${API_BASE_URL}/auth/login`,
-  },
-};
+import { apiClient } from '../utils/apiClient';
+import { env } from '../config/environment';
 
 interface SignupProps {
   onSignup: (user: any) => void;
@@ -59,50 +52,48 @@ const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToLand
     setLoading(true);
 
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          location: formData.location,
-          role: formData.role
-        }),
+      // Check backend health first
+      const isHealthy = await apiClient.checkBackendHealth();
+      
+      if (!isHealthy) {
+        if (env.useLocalBackend) {
+          setError('Local backend is not running. Please start the backend server on port 8002.');
+        } else {
+          setError('Remote backend is not responding. Please check your connection or try again later.');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Use the new API client for registration
+      const result = await apiClient.register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        location: formData.location,
+        role: formData.role
       });
 
-      if (response.ok) {
-        const userData = await response.json();
+      if (result.success) {
+        console.log('✅ Registration successful');
+        
         // Auto-login after successful registration
-        const loginResponse = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-            role: formData.role
-          }),
-        });
-
-        if (loginResponse.ok) {
-          const tokenData = await loginResponse.json();
-          localStorage.setItem('auth_token', tokenData.access_token);
-          localStorage.setItem('user_data', JSON.stringify(tokenData.user));
-          onSignup(tokenData.user);
+        const loginResult = await apiClient.login(formData.email, formData.password, formData.role);
+        
+        if (loginResult.success && loginResult.data) {
+          localStorage.setItem('auth_token', loginResult.data.access_token);
+          localStorage.setItem('user_data', JSON.stringify(loginResult.data.user));
+          onSignup(loginResult.data.user);
         } else {
-          onSignup(userData);
+          setError('Registration successful but auto-login failed. Please login manually.');
         }
       } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Registration failed');
+        setError(result.error || 'Registration failed');
       }
-    } catch (err) {
-      setError('Network error. Please check your connection.');
+    } catch (error) {
+      console.error('❌ Registration error:', error);
+      setError(error instanceof Error ? error.message : 'Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }

@@ -112,8 +112,8 @@ export const INDIAN_CITIES: DemoLocation[] = [
   { name: "Ludhiana", coordinates: [30.9010, 75.8573], state: "Punjab" }
 ];
 
-// Generate demo shelters across different states
-export const generateDemoShelters = (): DemoShelter[] => {
+// Generate demo shelters across different states (optimized for performance)
+export const generateDemoShelters = (limit: number = 15): DemoShelter[] => {
   const shelterTypes = [
     'Emergency Relief Center',
     'Community Shelter',
@@ -135,11 +135,14 @@ export const generateDemoShelters = (): DemoShelter[] => {
 
   const shelters: DemoShelter[] = [];
   
-  INDIAN_CITIES.forEach((city, cityIndex) => {
-    // Generate 1-3 shelters per city
-    const numShelters = Math.floor(Math.random() * 3) + 1;
+  // Limit to major cities only for better performance
+  const majorCities = INDIAN_CITIES.slice(0, 10); // Only first 10 major cities
+  
+  majorCities.forEach((city, cityIndex) => {
+    // Generate only 1-2 shelters per city (reduced from 1-3)
+    const numShelters = Math.min(Math.floor(Math.random() * 2) + 1, Math.ceil(limit / majorCities.length));
     
-    for (let i = 0; i < numShelters; i++) {
+    for (let i = 0; i < numShelters && shelters.length < limit; i++) {
       // Generate coordinates within 5km radius of city center
       const radius = 0.05; // ~5km
       const angle = (Math.PI * 2 * i) / numShelters + (Math.random() - 0.5) * 0.5;
@@ -151,14 +154,14 @@ export const generateDemoShelters = (): DemoShelter[] => {
       const shelterType = shelterTypes[Math.floor(Math.random() * shelterTypes.length)];
       const shelterFacilities = facilities
         .sort(() => Math.random() - 0.5)
-        .slice(0, Math.floor(Math.random() * 5) + 3);
+        .slice(0, Math.floor(Math.random() * 4) + 3); // Reduced facility count
       
       shelters.push({
         id: `demo-shelter-${cityIndex}-${i}`,
         name: `${shelterType} - ${city.name}`,
         address: `Near ${city.name} City Center, ${city.state}`,
-        capacity: Math.floor(Math.random() * 300) + 50,
-        currentOccupancy: Math.floor(Math.random() * 150),
+        capacity: Math.floor(Math.random() * 200) + 50, // Reduced capacity range
+        currentOccupancy: Math.floor(Math.random() * 100), // Reduced occupancy range
         coordinates: [lat, lng],
         facilities: shelterFacilities,
         contact: `+91-${Math.floor(Math.random() * 9000000000) + 1000000000}`,
@@ -168,11 +171,11 @@ export const generateDemoShelters = (): DemoShelter[] => {
     }
   });
   
-  return shelters;
+  return shelters.slice(0, limit); // Ensure we don't exceed the limit
 };
 
-// Generate demo alerts across different states
-export const generateDemoAlerts = (): DemoAlert[] => {
+// Generate demo alerts across different states (optimized for performance)
+export const generateDemoAlerts = (limit: number = 10): DemoAlert[] => {
   const alertTypes = [
     'FLOOD_PREDICTION',
     'HEAVY_RAIN_WARNING',
@@ -239,27 +242,30 @@ export const generateDemoAlerts = (): DemoAlert[] => {
 
   const alerts: DemoAlert[] = [];
   
-  INDIAN_CITIES.forEach((city, cityIndex) => {
-    // Generate 0-2 alerts per city (not all cities will have alerts)
-    const numAlerts = Math.random() < 0.6 ? Math.floor(Math.random() * 2) + 1 : 0;
+  // Limit to major cities only for better performance
+  const majorCities = INDIAN_CITIES.slice(0, 8); // Only first 8 major cities
+  
+  majorCities.forEach((city, cityIndex) => {
+    // Generate only 0-1 alerts per city (reduced from 0-2)
+    const numAlerts = Math.random() < 0.4 ? 1 : 0; // Reduced probability
     
-    for (let i = 0; i < numAlerts; i++) {
+    for (let i = 0; i < numAlerts && alerts.length < limit; i++) {
       const alertType = alertTypes[Math.floor(Math.random() * alertTypes.length)];
       const severity = severityLevels[Math.floor(Math.random() * severityLevels.length)];
       const messageOptions = alertMessages[alertType as keyof typeof alertMessages];
       const message = messageOptions[Math.floor(Math.random() * messageOptions.length)];
       
-      // Generate coordinates within 10km radius of city center
-      const radius = 0.1; // ~10km
+      // Generate coordinates within 5km radius of city center (reduced from 10km)
+      const radius = 0.05; // ~5km
       const angle = Math.random() * Math.PI * 2;
       const distance = Math.random() * radius;
       
       const lat = city.coordinates[0] + Math.cos(angle) * distance;
       const lng = city.coordinates[1] + Math.sin(angle) * distance;
       
-      // Generate timestamp within last 7 days
+      // Generate timestamp within last 3 days (reduced from 7 days)
       const now = new Date();
-      const randomHours = Math.floor(Math.random() * 168); // 0-168 hours (7 days)
+      const randomHours = Math.floor(Math.random() * 72); // 0-72 hours (3 days)
       const timestamp = new Date(now.getTime() - randomHours * 60 * 60 * 1000);
       
       alerts.push({
@@ -277,7 +283,7 @@ export const generateDemoAlerts = (): DemoAlert[] => {
     }
   });
   
-  return alerts;
+  return alerts.slice(0, limit); // Ensure we don't exceed the limit
 };
 
 // Generate demo SOS requests across different states

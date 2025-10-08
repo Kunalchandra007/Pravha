@@ -50,9 +50,10 @@ interface CitizenGISProps {
 }
 
 const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
+  console.log('CitizenGIS component rendering, user:', user);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   // Hardcoded demo shelters to ensure visibility
-  const defaultShelters: Shelter[] = [
+  const defaultShelters: Shelter[] = React.useMemo(() => [
     {
       id: 'default-1',
       name: 'Central Emergency Shelter',
@@ -86,23 +87,35 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
       contact: '+91-9876543212',
       isDemo: true
     }
-  ];
+  ], []);
 
   const [shelters, setShelters] = useState<Shelter[]>(defaultShelters);
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
   const [route, setRoute] = useState<[number, number][] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]); // Delhi center
   const [mapError, setMapError] = useState<string | null>(null);
-  const [mapReady, setMapReady] = useState(false);
+  const [mapReady] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
   const [forceMapUpdate, setForceMapUpdate] = useState(false);
+  const [mapZoom, setMapZoom] = useState(13);
+  const [alertScrollOffset, setAlertScrollOffset] = useState(0);
+  const [alertItemsPerView] = useState(6);
   
   // Debouncing refs to prevent rapid updates
   const alertClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shelterClickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // const mapUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Debounced map update function (for future use)
+  // const debouncedMapUpdate = useCallback((updateFn: () => void, delay: number = 300) => {
+  //   if (mapUpdateTimeoutRef.current) {
+  //     clearTimeout(mapUpdateTimeoutRef.current);
+  //   }
+  //   mapUpdateTimeoutRef.current = setTimeout(updateFn, delay);
+  // }, []);
   
 
   // Generate random coordinates around Delhi for demo purposes
@@ -112,25 +125,99 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
     return [randomLat, randomLng] as [number, number];
   };
 
+  // Enhanced clustering function to group nearby markers
+  const clusterMarkers = (markers: any[], zoomLevel: number) => {
+    if (zoomLevel >= 12) {
+      return markers; // Show all markers when zoomed in
+    }
+    
+    // For lower zoom levels, implement proper clustering
+    const clusterDistance = zoomLevel < 8 ? 0.05 : zoomLevel < 10 ? 0.02 : 0.01;
+    const clustered: any[] = [];
+    const processed = new Set<number>();
+    
+    markers.forEach((marker, index) => {
+      if (processed.has(index)) return;
+      
+      const cluster = [marker];
+      processed.add(index);
+      
+      // Find nearby markers to cluster
+      markers.forEach((otherMarker, otherIndex) => {
+        if (processed.has(otherIndex) || index === otherIndex) return;
+        
+        const distance = Math.sqrt(
+          Math.pow(marker.coordinates[0] - otherMarker.coordinates[0], 2) +
+          Math.pow(marker.coordinates[1] - otherMarker.coordinates[1], 2)
+        );
+        
+        if (distance < clusterDistance) {
+          cluster.push(otherMarker);
+          processed.add(otherIndex);
+        }
+      });
+      
+      // Create cluster marker
+      if (cluster.length > 1) {
+        const avgLat = cluster.reduce((sum, m) => sum + m.coordinates[0], 0) / cluster.length;
+        const avgLng = cluster.reduce((sum, m) => sum + m.coordinates[1], 0) / cluster.length;
+        clustered.push({
+          ...cluster[0],
+          coordinates: [avgLat, avgLng],
+          clusterSize: cluster.length,
+          isCluster: true
+        });
+      } else {
+        clustered.push(marker);
+      }
+    });
+    
+    return clustered;
+  };
+
   // Demo shelters are now generated from the imported demoData.ts file
 
-  // Add error boundary for map errors
+  // Enhanced error boundary for map errors
   useEffect(() => {
     const handleError = (error: ErrorEvent) => {
       if (error.message && error.message.includes('_leaflet_pos')) {
         console.error('Leaflet positioning error:', error);
         setMapError('Map positioning error. Please refresh the page.');
+      } else if (error.message && error.message.includes('leaflet')) {
+        console.error('General Leaflet error:', error);
+        // Try to recover from non-critical errors
+        setTimeout(() => {
+          setMapError(null);
+          setForceMapUpdate(true);
+        }, 2000);
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason && event.reason.message && event.reason.message.includes('leaflet')) {
+        console.error('Unhandled Leaflet promise rejection:', event.reason);
+        event.preventDefault(); // Prevent the default browser behavior
       }
     };
 
     window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   // Reset error when data changes
   useEffect(() => {
     setMapError(null);
   }, [alerts, shelters]);
+
+  // Clear any initial errors
+  useEffect(() => {
+    setMapError(null);
+  }, []);
 
   // Fetch alerts and shelters from backend
   useEffect(() => {
@@ -201,18 +288,18 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
             };
           });
           
-          // Generate comprehensive demo alerts from multiple states
-          const demoAlerts = generateDemoAlerts().map(alert => ({
+          // Generate limited demo alerts for better performance
+          const demoAlerts = generateDemoAlerts(8).map(alert => ({
             ...alert,
             title: alert.message
           }));
           
-          // Combine real and demo alerts
-          const allAlerts = [...realAlerts, ...demoAlerts];
+          // Combine real and demo alerts (limit total to 15)
+          const allAlerts = [...realAlerts, ...demoAlerts].slice(0, 15);
           setAlerts(allAlerts);
           
-          // Generate comprehensive demo shelters from multiple states
-          const demoShelters = generateDemoShelters();
+          // Generate limited demo shelters for better performance
+          const demoShelters = generateDemoShelters(12);
           
           // Fetch real shelters from backend
           try {
@@ -246,15 +333,17 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
               });
               
               console.log('Processed real shelters:', realShelters);
-              setShelters([...defaultShelters, ...realShelters, ...demoShelters]);
+              // Limit total shelters to 20 for better performance
+              const allShelters = [...defaultShelters, ...realShelters, ...demoShelters].slice(0, 20);
+              setShelters(allShelters);
             } else {
               console.log('Shelters API failed, using default shelters');
-              setShelters([...defaultShelters, ...demoShelters]);
+              setShelters([...defaultShelters, ...demoShelters].slice(0, 20));
             }
           } catch (shelterError) {
             console.error('Error fetching shelters:', shelterError);
             console.log('Using default shelters due to API error');
-            setShelters([...defaultShelters, ...demoShelters]);
+            setShelters([...defaultShelters, ...demoShelters].slice(0, 20));
           }
         }
       } catch (error) {
@@ -266,8 +355,8 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
 
     fetchData();
     
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchData, 30000);
+    // Refresh data every 60 seconds (reduced frequency for better performance)
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, [defaultShelters]);
 
@@ -447,15 +536,16 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
     const [lastCenter, setLastCenter] = useState<[number, number] | null>(null);
     const [shouldUpdate, setShouldUpdate] = useState(true);
     const [userZoomLevel, setUserZoomLevel] = useState<number | null>(null);
+    const [hasUserZoomed, setHasUserZoomed] = useState(false);
     
     useEffect(() => {
       // Force update when explicitly requested (e.g., clicking on alerts/shelters)
       if (forceUpdate) {
-        const zoomLevel = userZoomLevel || 15; // Use user's zoom level if available
+        const zoomLevel = hasUserZoomed ? map.getZoom() : (userZoomLevel || 15);
         map.setView(center, zoomLevel, {
           animate: true,
-          duration: 0.4, // Reduced from 1.0 to 0.4 for faster animation
-          easeLinearity: 0.25 // Improved easing for smoother animation
+          duration: 0.4,
+          easeLinearity: 0.25
         });
         setLastCenter(center);
         setShouldUpdate(false);
@@ -465,25 +555,26 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
       // Only update map center if user is not manually interacting and we should update
       if (!isUserInteracting && shouldUpdate && lastCenter && 
           (Math.abs(center[0] - lastCenter[0]) > 0.001 || Math.abs(center[1] - lastCenter[1]) > 0.001)) {
-        const zoomLevel = userZoomLevel || map.getZoom(); // Preserve current zoom level
-        map.setView(center, zoomLevel, {
+        // Always preserve user's current zoom level
+        const currentZoom = map.getZoom();
+        map.setView(center, currentZoom, {
           animate: true,
-          duration: 0.4, // Reduced from 1.0 to 0.4 for faster animation
-          easeLinearity: 0.25 // Improved easing for smoother animation
+          duration: 0.4,
+          easeLinearity: 0.25
         });
         setLastCenter(center);
-        setShouldUpdate(false); // Prevent further updates until user interaction
+        setShouldUpdate(false);
       } else if (!lastCenter) {
         // Initial center setting
         map.setView(center, 13, {
           animate: true,
-          duration: 0.4, // Reduced from 1.0 to 0.4 for faster animation
-          easeLinearity: 0.25 // Improved easing for smoother animation
+          duration: 0.4,
+          easeLinearity: 0.25
         });
         setLastCenter(center);
         setShouldUpdate(false);
       }
-    }, [map, center, isUserInteracting, lastCenter, shouldUpdate, forceUpdate, userZoomLevel]);
+    }, [map, center, isUserInteracting, lastCenter, shouldUpdate, forceUpdate, userZoomLevel, hasUserZoomed]);
     
     useEffect(() => {
       // Track user interactions
@@ -491,6 +582,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
       
       const handleInteractionStart = () => {
         setIsUserInteracting(true);
+        setHasUserZoomed(true); // Mark that user is interacting
         clearTimeout(interactionTimeout);
       };
       
@@ -498,18 +590,24 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
         // Add a longer delay before allowing programmatic updates
         interactionTimeout = setTimeout(() => {
           setIsUserInteracting(false);
-          setShouldUpdate(true); // Re-enable updates after user interaction
-        }, 3000); // Increased to 3 seconds to give users more time
+          // Only re-enable updates if user hasn't manually zoomed
+          if (!hasUserZoomed) {
+            setShouldUpdate(true);
+          }
+        }, 5000); // Increased to 5 seconds to give users more time
       };
 
       const handleZoomEnd = () => {
         // Store user's zoom level when they zoom
-        setUserZoomLevel(map.getZoom());
+        const currentZoom = map.getZoom();
+        setUserZoomLevel(currentZoom);
+        setMapZoom(currentZoom); // Update global zoom state for clustering
+        setHasUserZoomed(true); // Mark that user has manually zoomed
         // Don't immediately end interaction after zoom - let user continue
         interactionTimeout = setTimeout(() => {
           setIsUserInteracting(false);
-          setShouldUpdate(true);
-        }, 2000); // 2 second delay after zoom
+          // Don't re-enable updates after user zoom - respect their zoom level
+        }, 3000); // 3 second delay after zoom
       };
       
       // Track all possible user interactions
@@ -535,11 +633,14 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
         map.off('mousedown', handleInteractionStart);
         map.off('mouseup', handleInteractionEnd);
       };
-    }, [map]);
+    }, [map, hasUserZoomed]);
     
     return null;
   };
 
+  console.log('CitizenGIS render - mapError:', mapError, 'loading:', loading, 'mapReady:', mapReady);
+  console.log('CitizenGIS - MapContainer should be rendering now');
+  
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
       <style>
@@ -547,6 +648,11 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          .leaflet-container {
+            height: 100vh !important;
+            width: 100% !important;
+            z-index: 1;
           }
         `}
       </style>
@@ -635,41 +741,60 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           </p>
         </div>
 
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div 
+          style={{ flex: 1, overflow: 'auto' }}
+          onScroll={(e) => {
+            const target = e.target as HTMLDivElement;
+            const scrollTop = target.scrollTop;
+            const itemHeight = 120; // Approximate height of each alert item
+            const newOffset = Math.floor(scrollTop / itemHeight);
+            setAlertScrollOffset(newOffset);
+          }}
+        >
           {loading ? (
             <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                border: '3px solid #e5e7eb',
+                borderTop: '3px solid #3b82f6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 16px'
+              }}></div>
               Loading alerts...
             </div>
           ) : alerts.length > 0 ? (
             <div style={{ padding: '10px' }}>
-              {alerts.map((alert) => (
+              {/* Virtual scrolling - only render visible alerts */}
+              {alerts.slice(alertScrollOffset, alertScrollOffset + alertItemsPerView).map((alert, index) => (
                 <div
                   key={alert.id}
                   style={{
-                    padding: '15px',
-                    margin: '8px',
-                    borderRadius: '8px',
+                    padding: '12px', // Reduced padding
+                    margin: '6px', // Reduced margin
+                    borderRadius: '6px', // Reduced border radius
                     border: `2px solid ${getAlertColor(alert.risk_level)}`,
                     background: `${getAlertColor(alert.risk_level)}10`,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.15s ease', // Faster transition
                     ...(selectedAlert?.id === alert.id && {
                       background: `${getAlertColor(alert.risk_level)}20`,
-                      transform: 'scale(1.02)'
+                      transform: 'scale(1.01)' // Reduced scale
                     })
                   }}
                   onClick={() => handleAlertClick(alert)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '20px', marginRight: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '18px', marginRight: '6px' }}>
                       {getAlertIcon(alert.severity || alert.risk_level)}
                     </span>
-                    <div>
-                      <h4 style={{ margin: '0', fontSize: '16px', color: '#1f2937' }}>
-                        {alert.title}
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ margin: '0', fontSize: '14px', color: '#1f2937', lineHeight: '1.3' }}>
+                        {alert.title.length > 50 ? alert.title.substring(0, 50) + '...' : alert.title}
                       </h4>
                       <span style={{
-                        fontSize: '12px',
+                        fontSize: '10px',
                         color: getAlertColor(alert.severity || alert.risk_level),
                         fontWeight: '600',
                         textTransform: 'uppercase'
@@ -680,10 +805,14 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
                   </div>
                   
                   <p style={{
-                    margin: '8px 0',
-                    fontSize: '14px',
+                    margin: '6px 0',
+                    fontSize: '12px',
                     color: '#4b5563',
-                    lineHeight: '1.4'
+                    lineHeight: '1.3',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
                   }}>
                     {alert.message}
                   </p>
@@ -692,14 +821,25 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    fontSize: '12px',
+                    fontSize: '10px',
                     color: '#6b7280'
                   }}>
-                        <span>📍 {formatCoordinates(alert.coordinates)}</span>
+                    <span>📍 {formatCoordinates(alert.coordinates)}</span>
                     <span>{formatTimeAgo(alert.timestamp)}</span>
                   </div>
                 </div>
               ))}
+              {alerts.length > alertItemsPerView && (
+                <div style={{ 
+                  padding: '10px', 
+                  textAlign: 'center', 
+                  color: '#6b7280',
+                  fontSize: '12px',
+                  fontStyle: 'italic'
+                }}>
+                  Showing {alertScrollOffset + 1}-{Math.min(alertScrollOffset + alertItemsPerView, alerts.length)} of {alerts.length} alerts
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
@@ -712,6 +852,34 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           )}
         </div>
       </div>
+
+      {/* Map Loading Skeleton */}
+      {loading && !mapReady && (
+        <div style={{
+          height: '100%',
+          width: '100%',
+          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.5s infinite',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          color: '#666'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #3b82f6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '16px'
+          }}></div>
+          <h3 style={{ margin: '0 0 8px 0', color: '#374151' }}>Loading Map...</h3>
+          <p style={{ margin: '0', fontSize: '14px' }}>Preparing flood monitoring data</p>
+        </div>
+      )}
 
       {/* Map */}
       {isNavigating && (
@@ -772,20 +940,48 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           </button>
         </div>
       ) : (
-        <MapContainer
-          center={mapCenter}
-          zoom={13}
-          style={{ height: '100%', width: '100%' }}
-          whenReady={() => {
-            console.log('Map is ready');
-            setMapReady(true);
-          }}
-        >
+        <>
+          <div style={{ 
+            position: 'absolute', 
+            top: '10px', 
+            left: '10px', 
+            background: 'rgba(0,0,0,0.7)', 
+            color: 'white', 
+            padding: '5px 10px', 
+            borderRadius: '5px',
+            fontSize: '12px',
+            zIndex: 1000
+          }}>
+            Debug: Map should be visible
+          </div>
+          <MapContainer
+            center={mapCenter}
+            zoom={13}
+            style={{ height: '100vh', width: '100%' }}
+            whenReady={() => {
+              console.log('Map is ready');
+            }}
+          >
             <MapController center={mapCenter} forceUpdate={forceMapUpdate} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        {/* Default Center Marker to ensure map is visible */}
+        <Marker position={mapCenter}>
+          <Popup>
+            <div style={{ textAlign: 'center' }}>
+              <h4 style={{ margin: '0 0 8px 0' }}>🗺️ Map Center</h4>
+              <p style={{ margin: '0', fontSize: '14px' }}>
+                {mapCenter[0].toFixed(4)}, {mapCenter[1].toFixed(4)}
+              </p>
+              <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#666' }}>
+                Delhi, India
+              </p>
+            </div>
+          </Popup>
+        </Marker>
 
         {/* Current Location Marker */}
         {currentLocation && (
@@ -801,17 +997,22 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           </Marker>
         )}
 
-          {/* Alert Circles */}
-          {mapReady && alerts.filter(alert => alert.coordinates && alert.coordinates.length === 2).map((alert) => (
+          {/* Alert Circles - Only show for HIGH and CRITICAL alerts to reduce rendering load */}
+          {mapReady && alerts.filter(alert => 
+            alert.coordinates && 
+            alert.coordinates.length === 2 && 
+            (alert.severity === 'HIGH' || alert.severity === 'CRITICAL' || alert.risk_level === 'HIGH' || alert.risk_level === 'CRITICAL')
+          ).slice(0, 50) // Limit to 50 alerts max to prevent performance issues
+          .map((alert) => (
           <Circle
             key={alert.id}
             center={alert.coordinates}
-            radius={1000} // 1km radius
+            radius={800} // Reduced radius for better performance
             pathOptions={{
               color: getAlertColor(alert.severity || alert.risk_level),
               fillColor: getAlertColor(alert.severity || alert.risk_level),
-              fillOpacity: 0.3,
-              weight: 3,
+              fillOpacity: 0.2, // Reduced opacity for better performance
+              weight: 2, // Reduced weight
               dashArray: (alert.severity || alert.risk_level) === 'CRITICAL' ? '5, 5' : '10, 10'
             }}
             eventHandlers={{
@@ -861,8 +1062,8 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           </Circle>
         ))}
 
-        {/* Alert Markers */}
-        {alerts.filter(alert => alert.coordinates && alert.coordinates.length === 2).map((alert) => (
+        {/* Alert Markers - Apply clustering based on zoom level */}
+        {clusterMarkers(alerts.filter(alert => alert.coordinates && alert.coordinates.length === 2), mapZoom).map((alert) => (
           <Marker
             key={`marker-${alert.id}`}
             position={alert.coordinates}
@@ -947,8 +1148,8 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           </Marker>
         ))}
 
-          {/* Shelter Markers */}
-          {mapReady && shelters.filter(shelter => {
+          {/* Shelter Markers - Apply clustering based on zoom level */}
+          {mapReady && clusterMarkers(shelters.filter(shelter => {
             const hasValidCoords = shelter.coordinates && 
               Array.isArray(shelter.coordinates) && 
               shelter.coordinates.length === 2 &&
@@ -962,7 +1163,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
             }
             
             return hasValidCoords;
-          }).map((shelter) => (
+          }), mapZoom).map((shelter) => (
           <Marker
             key={`shelter-${shelter.id}`}
             position={shelter.coordinates}
@@ -1057,6 +1258,7 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
           />
         )}
         </MapContainer>
+        </>
       )}
 
       {/* Legend */}
@@ -1126,6 +1328,20 @@ const CitizenGIS: React.FC<CitizenGISProps> = ({ user, onBack }) => {
             transform: scale(1);
             opacity: 1;
           }
+        }
+        
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>

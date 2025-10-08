@@ -1,10 +1,10 @@
 // API Configuration
-// Replace 'YOUR_SURVAM_AI_API_KEY_HERE' with your actual Survam AI API key
+import { env } from './environment';
 
-export const SURVAM_AI_API_KEY = 'sk_vykquazm_WGrJMKiI4Nn8rQKYV2LXv9NQ';
+export const SURVAM_AI_API_KEY = env.survamApiKey;
 
 // Backend API URL configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
+export const API_BASE_URL = env.apiUrl;
 
 // API endpoints
 export const API_ENDPOINTS = {

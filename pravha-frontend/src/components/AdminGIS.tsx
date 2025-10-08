@@ -167,17 +167,35 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
     }, 1000);
   };
 
-  // Add error boundary for map errors
+  // Enhanced error boundary for map errors
   useEffect(() => {
     const handleError = (error: ErrorEvent) => {
       if (error.message && error.message.includes('_leaflet_pos')) {
         console.error('Leaflet positioning error:', error);
         setMapError('Map positioning error. Please refresh the page.');
+      } else if (error.message && error.message.includes('leaflet')) {
+        console.error('General Leaflet error:', error);
+        // Try to recover from non-critical errors
+        setTimeout(() => {
+          setMapError(null);
+        }, 2000);
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason && event.reason.message && event.reason.message.includes('leaflet')) {
+        console.error('Unhandled Leaflet promise rejection:', event.reason);
+        event.preventDefault(); // Prevent the default browser behavior
       }
     };
 
     window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   // Reset error when data changes
@@ -566,14 +584,17 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
     const [isUserInteracting, setIsUserInteracting] = useState(false);
     const [lastCenter, setLastCenter] = useState<[number, number] | null>(null);
     const [shouldUpdate, setShouldUpdate] = useState(true);
+    const [userZoomLevel, setUserZoomLevel] = useState<number | null>(null);
+    const [hasUserZoomed, setHasUserZoomed] = useState(false);
     
     useEffect(() => {
       // Force update when explicitly requested (e.g., clicking on alerts/shelters)
       if (forceUpdate) {
-        map.setView(center, 15, {
+        const zoomLevel = hasUserZoomed ? map.getZoom() : (userZoomLevel || 15);
+        map.setView(center, zoomLevel, {
           animate: true,
-          duration: 1.0,
-          easeLinearity: 0.1
+          duration: 0.4,
+          easeLinearity: 0.25
         });
         setLastCenter(center);
         setShouldUpdate(false);
@@ -583,24 +604,26 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
       // Only update map center if user is not manually interacting and we should update
       if (!isUserInteracting && shouldUpdate && lastCenter && 
           (Math.abs(center[0] - lastCenter[0]) > 0.001 || Math.abs(center[1] - lastCenter[1]) > 0.001)) {
-        map.setView(center, 15, {
+        // Always preserve user's current zoom level
+        const currentZoom = map.getZoom();
+        map.setView(center, currentZoom, {
           animate: true,
-          duration: 1.0,
-          easeLinearity: 0.1
+          duration: 0.4,
+          easeLinearity: 0.25
         });
         setLastCenter(center);
-        setShouldUpdate(false); // Prevent further updates until user interaction
+        setShouldUpdate(false);
       } else if (!lastCenter) {
         // Initial center setting
         map.setView(center, 15, {
           animate: true,
-          duration: 1.0,
-          easeLinearity: 0.1
+          duration: 0.4,
+          easeLinearity: 0.25
         });
         setLastCenter(center);
         setShouldUpdate(false);
       }
-    }, [map, center, isUserInteracting, lastCenter, shouldUpdate, forceUpdate]);
+    }, [map, center, isUserInteracting, lastCenter, shouldUpdate, forceUpdate, userZoomLevel, hasUserZoomed]);
     
     useEffect(() => {
       // Track user interactions
@@ -608,6 +631,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
       
       const handleInteractionStart = () => {
         setIsUserInteracting(true);
+        setHasUserZoomed(true); // Mark that user is interacting
         clearTimeout(interactionTimeout);
       };
       
@@ -615,13 +639,28 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         // Add a longer delay before allowing programmatic updates
         interactionTimeout = setTimeout(() => {
           setIsUserInteracting(false);
-          setShouldUpdate(true); // Re-enable updates after user interaction
-        }, 1000); // 1 second delay
+          // Only re-enable updates if user hasn't manually zoomed
+          if (!hasUserZoomed) {
+            setShouldUpdate(true);
+          }
+        }, 5000); // Increased to 5 seconds to give users more time
+      };
+
+      const handleZoomEnd = () => {
+        // Store user's zoom level when they zoom
+        const currentZoom = map.getZoom();
+        setUserZoomLevel(currentZoom);
+        setHasUserZoomed(true); // Mark that user has manually zoomed
+        // Don't immediately end interaction after zoom - let user continue
+        interactionTimeout = setTimeout(() => {
+          setIsUserInteracting(false);
+          // Don't re-enable updates after user zoom - respect their zoom level
+        }, 3000); // 3 second delay after zoom
       };
       
       // Track all possible user interactions
       map.on('zoomstart', handleInteractionStart);
-      map.on('zoomend', handleInteractionEnd);
+      map.on('zoomend', handleZoomEnd);
       map.on('dragstart', handleInteractionStart);
       map.on('dragend', handleInteractionEnd);
       map.on('moveend', handleInteractionEnd);
@@ -633,7 +672,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
       return () => {
         clearTimeout(interactionTimeout);
         map.off('zoomstart', handleInteractionStart);
-        map.off('zoomend', handleInteractionEnd);
+        map.off('zoomend', handleZoomEnd);
         map.off('dragstart', handleInteractionStart);
         map.off('dragend', handleInteractionEnd);
         map.off('moveend', handleInteractionEnd);
@@ -642,7 +681,7 @@ const AdminGIS: React.FC<AdminGISProps> = ({ user, onBack }) => {
         map.off('mousedown', handleInteractionStart);
         map.off('mouseup', handleInteractionEnd);
       };
-    }, [map]);
+    }, [map, hasUserZoomed]);
     
     return null;
   };

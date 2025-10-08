@@ -4,6 +4,8 @@ import { useTranslation } from '../contexts/TranslationContext';
 import { getTranslatedText } from '../utils/translations';
 import { TokenManager } from '../utils/tokenManager';
 import { API_ENDPOINTS } from '../config/api';
+import { apiClient } from '../utils/apiClient';
+import { env } from '../config/environment';
 
 interface LoginProps {
   onLogin: (user: any) => void;
@@ -89,51 +91,59 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToLandin
 
     // Debug: Log the API URL being used
     console.log('🔍 API URL being used:', API_ENDPOINTS.AUTH.LOGIN);
-    console.log('🔍 Environment variable:', process.env.REACT_APP_API_URL);
+    console.log('🔍 Environment configuration:', env);
 
-    // Test Railway backend health first
+    // Check backend health first
     try {
-      console.log('🏥 Testing Railway backend health...');
-      const healthResponse = await fetch('http://localhost:8002/health');
-      console.log('🏥 Health check response:', healthResponse.status);
-      if (!healthResponse.ok) {
-        throw new Error(`Railway backend health check failed: ${healthResponse.status}`);
+      console.log('🏥 Testing backend health...');
+      const isHealthy = await apiClient.checkBackendHealth();
+      
+      if (!isHealthy) {
+        if (env.useLocalBackend) {
+          setError('Local backend is not running. Please start the backend server on port 8002.');
+        } else {
+          setError('Remote backend is not responding. Please check your connection or try again later.');
+        }
+        setLoading(false);
+        return;
       }
+      
+      console.log('✅ Backend health check passed');
     } catch (healthError) {
-      console.error('🏥 Railway backend health check failed:', healthError);
-      // TypeScript-safe error handling for unknown error type
+      console.error('🏥 Backend health check failed:', healthError);
       const errorMessage = healthError instanceof Error ? healthError.message : String(healthError);
-      setError(`Railway backend is not responding. Please check if it's running. Error: ${errorMessage}`);
+      
+      if (env.useLocalBackend) {
+        setError(`Local backend connection failed: ${errorMessage}. Please ensure the backend server is running on port 8002.`);
+      } else {
+        setError(`Remote backend connection failed: ${errorMessage}. Please check your internet connection.`);
+      }
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // Use the new API client for login
+      const result = await apiClient.login(formData.email, formData.password, formData.role);
+      
+      if (result.success && result.data) {
+        console.log('✅ Login successful:', result.data);
 
-      if (response.ok) {
-        const tokenData = await response.json();
         // Store tokens using TokenManager
         TokenManager.setTokens(
-          tokenData.access_token,
-          tokenData.refresh_token,
-          tokenData.user,
-          tokenData.expires_in
+          result.data.access_token,
+          result.data.refresh_token,
+          result.data.user,
+          result.data.expires_in
         );
         
-        onLogin(tokenData.user);
+        onLogin(result.data.user);
       } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Login failed');
+        throw new Error(result.error || 'Login failed');
       }
-    } catch (err) {
-      setError('Network error. Please check your connection.');
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      setError(error instanceof Error ? error.message : 'Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
